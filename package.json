@@ -12,7 +12,8 @@
     "verify:site": "node scripts/verify-site.mjs",
     "verify:deploy": "node scripts/verify-deploy.mjs",
     "verify:demo": "node scripts/verify-demo.mjs",
-    "verify:base": "node scripts/verify-base.mjs"
+    "verify:base": "node scripts/verify-base.mjs",
+    "verify:button": "node scripts/verify-button.mjs"
   },
   "dependencies": {},
   "devDependencies": {

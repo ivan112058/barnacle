@@ -1,1 +1,268 @@
-/* button.css — filled by ticket 07 (layer: components) */
+/* button.css — the button shape: the bare <button> element, the .bn-button opt-in for markup that
+ * carries no button semantics, the four interaction states, and the two modifier axes.
+ * (layer: components, assigned by CSS_MANIFEST in scripts/build.mjs — this file writes no @layer.)
+ *
+ * Three contracts govern everything below.
+ *
+ *   1. The element is the anchor (ADR-0001). A bare <button> is dressed, no class required.
+ *      `.bn-button` exists for `<a>`, `<span>` and friends, which have no attribute that says
+ *      "I am a button". A bare `a` stays a link (orchestrator decision 3A): 00-base.css keeps it
+ *      underlined and flat, and the button geometry only arrives through the class.
+ *   2. The geometry has one source and it is not this file (orchestrator-decisions §4). Every
+ *      displacement, shadow tier, focus ring and motion duration is a --_ slot declared once on
+ *      :root in 00-base.css. This file decides *which* slot applies in *which* state and never
+ *      states a number, so "the object lifts by exactly what its shadow grows by" (spec §7)
+ *      cannot drift — and .bn-outline can lower a whole tier without breaking the equation.
+ *   3. Meaning rides `data-variant`, appearance rides `bn-` class names, never mixed (spec §3
+ *      invariant 4, decision B). success/warning/danger publish --_variant-color in 01-theme.css
+ *      and are only consumed here; outline, ghost, size, icon and group are shapes, so they are
+ *      classes.
+ *
+ * Sizes are classes rather than `[data-size]` because a size is appearance, and because the two
+ * names (.bn-sm / .bn-lg) are meant to be reused verbatim by later components (decision B).
+ *
+ * Not in this file, on purpose: `input[type="submit"|"reset"|"button"]`. Spec §8 anchors Button on
+ * "bare `button`, `a`", and every rule here would have to repeat a five-branch :is() list to keep
+ * an input from out-specifying its own variant and size rules. That belongs to the Form ticket.
+ *
+ * States are guarded with :not(:disabled):not([aria-disabled="true"]) *here*, at the selector, so
+ * no rule below ever has to cancel a transform; the displacement of a control that cannot be
+ * picked up is zero because nothing applies it.
+ */
+
+/* ==============================================================================================
+ * 1. The shape — one rule, both anchors.
+ * ============================================================================================ */
+:is(button, .bn-button) {
+  /* The surface slot is the only thing a variant or an appearance class changes about colour. */
+  --_surface: var(--bn-main);
+  --_surface-hover: var(--bn-main);
+  --_surface-press: var(--bn-main);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  box-sizing: border-box;
+  min-block-size: 2.5rem;                /* 40px, comfortably over WCAG 2.2 SC 2.5.8 */
+  padding: 0.625rem 1.25rem;
+
+  /* The structural box is declared here and in no state rule: changing a border *colour* on
+     hover is allowed, changing a border *width* would reflow the grid (spec §3 invariant 7). */
+  border-style: solid;
+  border-width: var(--bn-border-width);
+  border-color: var(--_border-rest);
+  border-radius: var(--bn-radius);       /* 0 — square corners are the point (spec §6.1) */
+
+  background: var(--_surface);
+  color: var(--bn-main-foreground);
+  box-shadow: var(--_shadow-rest);       /* the md tier at rest (spec §7) */
+
+  font-family: var(--bn-font-family);
+  font-size: 1rem;
+  font-weight: var(--bn-font-weight-heading);
+  line-height: 1.4;
+  text-align: center;
+  text-decoration: none;                 /* so an <a class="bn-button"> is not underlined */
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* ==============================================================================================
+ * 2. Size axis — appearance, therefore bn- class names (decision B: .bn-sm / .bn-lg).
+ *    The middle size is the absence of a class, and no size may touch the border box.
+ * ============================================================================================ */
+:is(button, .bn-button).bn-sm {
+  min-block-size: 2rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+:is(button, .bn-button).bn-lg {
+  min-block-size: 3rem;
+  padding: 0.875rem 1.75rem;
+  font-size: 1.125rem;
+}
+
+/* Icon-only button: square, and the glyph is sized from the font so it scales with the size axis. */
+:is(button, .bn-button).bn-icon {
+  inline-size: 2.5rem;
+  padding: 0;
+  aspect-ratio: 1;
+}
+
+:is(button, .bn-button) > svg {
+  inline-size: 1em;
+  block-size: 1em;
+  flex: none;
+  pointer-events: none;                  /* the glyph can never steal the click target */
+}
+
+/* ==============================================================================================
+ * 3. Meaning axis — data-variant only, and only through --_variant-color.
+ *
+ *    The mapping lives in 01-theme.css; here the colour is spent on the surface and nowhere else.
+ *    The border and the shadow stay structural, which is what keeps a variant from reflowing.
+ * ============================================================================================ */
+:is(button, .bn-button):is([data-variant="success"], [data-variant="warning"], [data-variant="danger"], [data-variant="error"]) {
+  --_surface: var(--_variant-color);
+  --_surface-hover: var(--_variant-color);
+  --_surface-press: var(--_variant-color);
+}
+
+/* secondary is a hierarchy, not a colour (recipe §3, decision §1): it gets the page's own
+   secondary surface and the page's ink, with no --_variant-color involved. */
+:is(button, .bn-button)[data-variant="secondary"] {
+  --_surface: var(--bn-secondary-background);
+  --_surface-hover: var(--bn-secondary-background);
+  --_surface-press: var(--bn-secondary-background);
+  color: var(--bn-foreground);
+}
+
+/* ==============================================================================================
+ * 4. Appearance modifiers — bn- class names, orthogonal to the meaning axis.
+ * ============================================================================================ */
+
+/* Outline: no fill, but a border and ink in the current semantic colour (or the page's own ink
+   and border when no variant is in play). The shadow drops to the sm tier and the hover target
+   becomes md — one tier up is exactly --bn-shadow-lift, so the shadow stays planted here too. */
+:is(button, .bn-button).bn-outline {
+  --_surface: transparent;
+  --_surface-press: transparent;
+  --_shadow-rest: var(--bn-shadow-sm);
+  --_shadow-hover: var(--bn-shadow-md);
+  --_border-rest: var(--_variant-color, var(--bn-border-color));
+  --_border-hover: var(--_variant-color, var(--bn-border-color));
+  --_border-press: var(--_variant-color, var(--bn-border-color));
+  color: var(--_variant-color, var(--bn-foreground));
+}
+
+/* Ghost: no shadow, no border, no displacement. The geometry is zeroed by overwriting the same
+   slots the shared states read — the one legitimate place for those zeros, and the reason no rule
+   in this library ever has to write `transform: none`. */
+:is(button, .bn-button).bn-ghost {
+  --_shadow-rest: none;
+  --_shadow-hover: none;
+  --_shadow-press: none;
+  --_lift-x: 0;
+  --_lift-y: 0;
+  --_press-x: 0;
+  --_press-y: 0;
+  --_surface: transparent;
+  --_surface-press: transparent;
+  --_border-rest: transparent;
+  --_border-hover: transparent;
+  --_border-press: transparent;
+}
+
+/* ==============================================================================================
+ * 5. The three states that move — hover, press, focus.
+ * ============================================================================================ */
+
+/* Hover: up-left by --bn-shadow-lift while the shadow grows by the same amount, so the shadow's
+   page position does not move: the object lifts off it (spec §7). Wrapped in (hover: hover) so a
+   touch device cannot get stuck in the raised state (decision D).
+   Only colours and the two geometry slots change here — never a border width. */
+@media (hover: hover) {
+  :is(button, .bn-button):not(:disabled):not([aria-disabled="true"]):hover {
+    transform: translate(var(--_lift-x), var(--_lift-y));
+    box-shadow: var(--_shadow-hover);
+    border-color: var(--_border-hover);
+    background-color: var(--_surface-hover);
+  }
+
+  :is(button, .bn-button).bn-outline:not(:disabled):not([aria-disabled="true"]):hover {
+    --_surface-hover: var(--_variant-color, var(--bn-main));
+    color: var(--bn-main-foreground);
+  }
+
+  :is(button, .bn-button).bn-ghost:not(:disabled):not([aria-disabled="true"]):hover {
+    --_surface-hover: var(--bn-main);
+    color: var(--bn-main-foreground);
+  }
+}
+
+/* Press: fall toward the shadow (positive offsets), which collapses underneath. Source order
+   decides against the hover rule, which is why the guard sets match exactly. */
+:is(button, .bn-button):not(:disabled):not([aria-disabled="true"]):active {
+  transform: translate(var(--_press-x), var(--_press-y));
+  box-shadow: var(--_shadow-press);
+  border-color: var(--_border-press);
+  background-color: var(--_surface-press);
+}
+
+/* Focus: an outline, not a second box-shadow, so the hard shadow survives underneath and a thick
+   border cannot swallow the ring (spec §7). 00-base.css already carries this for every element;
+   it is restated here so the button's whole contract reads in one file, with the same values. */
+:is(button, .bn-button):focus-visible {
+  outline: var(--_focus-ring);
+  outline-offset: var(--_focus-ring-offset);
+}
+
+/* Motion: the transitions are only *declared* where the visitor accepts motion, so the reduced
+   case is the absence of a rule rather than a rule switching motion off afterwards (spec §7).
+   Below this block the button is instant and otherwise identical. */
+@media (prefers-reduced-motion: no-preference) {
+  :is(button, .bn-button) {
+    transition:
+      transform var(--_motion),
+      box-shadow var(--_motion),
+      background-color var(--_motion),
+      border-color var(--_motion);
+  }
+}
+
+/* ==============================================================================================
+ * 6. Button group — a shape with no element of its own, so a class: .bn-button-group.
+ *    (Deliberately not bare `menu`: a menu is a list of commands and may be used bare.)
+ * ============================================================================================ */
+.bn-button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;                          /* 12px > the largest shadow offset, so neighbours never
+                                            share a shadow and neither looks like it is layered */
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Attached form (.bn-attached): one bar. Individually zeroed slots again, and the adjacent
+   borders are pulled over each other so the seam is a single line instead of a double one. */
+.bn-button-group.bn-attached {
+  gap: 0;
+}
+
+.bn-button-group.bn-attached > :is(button, .bn-button) {
+  --_shadow-rest: none;
+  --_shadow-hover: none;
+  --_shadow-press: none;
+  --_lift-x: 0;
+  --_lift-y: 0;
+  --_press-x: 0;
+  --_press-y: 0;
+  margin-inline-start: calc(var(--bn-border-width) * -1);
+}
+
+.bn-button-group.bn-attached > :is(button, .bn-button):first-child {
+  margin-inline-start: 0;
+}
+
+/* ==============================================================================================
+ * 7. Disabled — :disabled and [aria-disabled="true"], no invented class name.
+ *
+ *    Last in the file, at the same specificity as a variant or an appearance class, so it wins by
+ *    order. The surface becomes the page's secondary surface and the ink stays the page's ink;
+ *    opacity only takes the edge off. A disabled control therefore keeps its border, its shadow
+ *    and readable text instead of fading into an unreadable ghost, and the guarded state rules
+ *    above mean it can never be lifted.
+ * ============================================================================================ */
+:is(button, .bn-button):is(:disabled, [aria-disabled="true"]) {
+  --_surface: var(--bn-secondary-background);
+  --_border-rest: var(--bn-border-color);
+  --_border-hover: var(--bn-border-color);
+  --_border-press: var(--bn-border-color);
+  color: var(--bn-foreground);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
