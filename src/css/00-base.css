@@ -1,2 +1,252 @@
 @layer theme, base, components, animations, utilities;
-/* 00-base.css — filled by ticket 06 (layer: base) */
+/* 00-base.css — bare semantic HTML, typography, and the single source of interaction geometry.
+ *
+ * Layer: base. The layer assignment lives in CSS_MANIFEST (scripts/build.mjs); this file writes
+ * no other @layer, and line 1 stays the declaration that makes unlayered user CSS beat every
+ * layer this library ships (ADR-0006).
+ *
+ * Everything here is written for elements, never for classes (ADR-0001): `body`, `h1`–`h6`,
+ * `p`, `ul`/`ol`, `blockquote`, `code`, `pre`, `hr`, `mark` and bare `a` are dressed the way
+ * they are written by hand. Three rules run through the whole file:
+ *
+ *   - No colour literal. Colours come from the --bn-* tokens; 01-theme.css is the only file
+ *     allowed to hold one.
+ *   - No geometry literal. Displacements, shadow tiers, the focus ring and the motion duration
+ *     are declared once, as --_ slots on :root in section 1 below. Components (ticket 07 on)
+ *     read those slots and never restate a number, and no numeric literal may appear in a
+ *     geometry property anywhere in this file.
+ *   - Nothing here is ever marked important. A layer is already the weakest origin on the page,
+ *     so one plain unlayered rule of the user's beats this file without any added weight. (The
+ *     keyword itself is avoided in this file: tickets 01 and 05 grep the raw artifact for it.)
+ *
+ * Bare `a` is a link, not a button (orchestrator decision 3A): it keeps its underline, its
+ * token colour and a focus ring, and takes no shadow or lift. `.bn-button` is how an <a> takes
+ * the button shape — that file belongs to ticket 07.
+ */
+
+/* ==============================================================================================
+ * 1. Interaction geometry — the single source.
+ *
+ * Frozen contract (orchestrator-decisions §4): ticket 06 declares, 07 consumes, 09 audits.
+ * The values sit on :root on purpose. A derived custom property is substituted on the element
+ * that declares it and descendants inherit the substituted string, so only an override on
+ * :root (<html>) rescales the chain — put --bn-shadow-x on some wrapper and these slots keep
+ * the old numbers. Documented as "override tokens on :root".
+ * ============================================================================================ */
+:root {
+  /* 位移：悬停向左上抬起（负值），按下朝阴影方向落下（正值）。 */
+  --_lift-x: calc(var(--bn-shadow-lift) * -1);
+  --_lift-y: calc(var(--bn-shadow-lift) * -1);
+  --_press-x: var(--bn-press);
+  --_press-y: var(--bn-press);
+
+  /* 四态的阴影档位。 */
+  --_shadow-rest: var(--bn-shadow-md);
+  --_shadow-hover: var(--bn-shadow-lg);
+  --_shadow-press: none;
+
+  /* 焦点环与它的外扩距离：3px 让厚边框吞不掉指示器（spec §7）。 */
+  --_focus-ring: 3px solid var(--bn-ring);
+  --_focus-ring-offset: 3px;
+
+  /* 动效时长：读公共令牌，所以重定 --bn-transition 会一起重定全库的过渡。 */
+  --_motion: var(--bn-transition);
+
+  /* 边框与表面的默认档位。组件要别的档位时在自己的选择器上覆盖这些槽位，而不是重写数值。 */
+  --_border-rest: var(--bn-border-color);
+  --_border-hover: var(--bn-border-color);
+  --_border-press: var(--bn-border-color);
+  --_surface: var(--bn-secondary-background);
+  --_surface-hover: var(--bn-secondary-background);
+  --_surface-press: var(--bn-secondary-background);
+}
+
+/* ==============================================================================================
+ * 2. Focus — one ring for every focusable thing.
+ *
+ * outline rather than box-shadow (spec §7): box-shadow is already carrying the hard shadow, and
+ * an outline is painted outside it, so the two cannot swallow each other. `a` is included here,
+ * which is why bare links need no rule of their own.
+ * ============================================================================================ */
+:focus-visible {
+  outline: var(--_focus-ring);
+  outline-offset: var(--_focus-ring-offset);
+}
+
+/* ==============================================================================================
+ * 3. The document: page colours and the two font axes.
+ *
+ * --bn-font-family is the body face; --bn-font-display is the display face and defaults to the
+ * same stack, so overriding one token is enough to bring in a display face (spec §6.3, no
+ * bundled webfont).
+ * ============================================================================================ */
+body {
+  background: var(--bn-background);
+  color: var(--bn-foreground);
+  font-family: var(--bn-font-family);
+  font-weight: var(--bn-font-weight-base);
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ==============================================================================================
+ * 4. Headings.
+ *
+ * Display face, heavy weight, tight tracking, and a size scale that halves down the page. The
+ * weight is deliberately not a reset to 400: the printed-poster feel of Neubrutalism comes from
+ * text that is heavier than the web default.
+ * ============================================================================================ */
+:is(h1, h2, h3, h4, h5, h6) {
+  margin-block: 0 0.5em;
+  font-family: var(--bn-font-display);
+  font-weight: var(--bn-font-weight-heading);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: 2.5rem;
+}
+
+h2 {
+  font-size: 2rem;
+}
+
+h3 {
+  font-size: 1.625rem;
+}
+
+h4 {
+  font-size: 1.25rem;
+}
+
+h5 {
+  font-size: 1.125rem;
+}
+
+h6 {
+  font-size: 1rem;
+}
+
+/* ==============================================================================================
+ * 5. Body copy.
+ * ============================================================================================ */
+p {
+  margin-block: 0 1em;
+  max-inline-size: 68ch;
+}
+
+/* ==============================================================================================
+ * 6. Lists.
+ *
+ * Square markers at every depth — the UA sheet lowers nested bullets to circles, and an author
+ * rule beats the UA sheet by origin, so one rule is enough. Nested lists tighten their rhythm
+ * instead of repeating the outer spacing.
+ * ============================================================================================ */
+ul,
+ol {
+  margin-block: 0 1em;
+  padding-inline-start: 1.5em;
+}
+
+ul {
+  list-style-type: square;
+}
+
+:is(ul, ol) :is(ul, ol) {
+  margin-block: 0.25em 0;
+}
+
+li + li {
+  margin-block-start: 0.25em;
+}
+
+/* ==============================================================================================
+ * 7. Quotation.
+ *
+ * A logical inline border, so a right-to-left page needs no second rule; the bar is twice the
+ * structural border width and comes from --bn-main.
+ * ============================================================================================ */
+blockquote {
+  margin-inline: 0;
+  margin-block: 0 1em;
+  padding: 0.75em 1em;
+  border-inline-start: calc(var(--bn-border-width) * 2) solid var(--bn-main);
+  background: var(--bn-secondary-background);
+  font-style: italic;
+}
+
+/* ==============================================================================================
+ * 8. Code.
+ *
+ * The surface is --bn-secondary-background, which differs from --bn-background in both themes,
+ * so a code block never disappears into the page. Inline code keeps a hairline so it does not
+ * read as a component; a fenced block gets the structural border and the small shadow tier,
+ * because a code block is not an interactive object and must not compete with a button.
+ * ============================================================================================ */
+code {
+  padding: 0.1em 0.35em;
+  font-family: var(--bn-font-mono);
+  font-size: 0.9em;
+  background: var(--bn-secondary-background);
+  border: 1px solid var(--bn-border-color);
+}
+
+pre {
+  margin-block: 0 1em;
+  padding: 1rem;
+  overflow-x: auto;
+  font-family: var(--bn-font-mono);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  background: var(--bn-secondary-background);
+  border: var(--bn-border-width) solid var(--bn-border-color);
+  border-radius: var(--bn-radius);
+  box-shadow: var(--bn-shadow-sm);
+}
+
+pre code {
+  padding: 0;
+  font-size: inherit;
+  background: none;
+  border: 0;
+}
+
+/* ==============================================================================================
+ * 9. Rule and highlight.
+ * ============================================================================================ */
+hr {
+  margin-block: 2rem;
+  border: 0;
+  border-block-start: var(--bn-border-width) solid var(--bn-border-color);
+}
+
+mark {
+  padding: 0 0.15em;
+  background: var(--bn-main);
+  color: var(--bn-main-foreground);
+}
+
+/* ==============================================================================================
+ * 10. Links.
+ *
+ * Bare `a` stays a link: underlined, in the page's ink, highlighted with --bn-main on hover.
+ * No shadow and no lift here — a page of raised inline links is a usability accident; `.bn-button`
+ * (ticket 07) is the opt-in button shape for <a>.
+ * ============================================================================================ */
+a {
+  color: var(--bn-foreground);
+  text-decoration-line: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.2em;
+  transition: background-color var(--_motion), color var(--_motion);
+}
+
+@media (hover: hover) {
+  a:hover {
+    background-color: var(--bn-main);
+    color: var(--bn-main-foreground);
+  }
+}
