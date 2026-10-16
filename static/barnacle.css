@@ -5,7 +5,101 @@
 }
 /* src/css/01-theme.css (@layer theme) */
 @layer theme {
-/* 01-theme.css — filled by ticket 05 (layer: theme) */
+/* 01-theme.css — the library's visual vocabulary (layer: theme, assigned by CSS_MANIFEST).
+ *
+ * Everything here is a token declaration: no selectors style anything, they only
+ * publish values. Two namespaces exist and nothing else (ADR-0005):
+ *
+ *   --bn-*  public theme tokens. Documented, stable, safe for users to override.
+ *   --_*    internal implementation variables. Not documented, may be renamed.
+ *
+ * Light tokens live in :root. Dark tokens live in [data-theme="dark"] and nowhere
+ * else — dark mode is an explicit switch, never a system preference (ADR-0004), so
+ * no system-preference media query may appear in this file or in the artifact.
+ *
+ * The three shadow tiers (--bn-shadow-sm/md/lg) are all derived from the two offset
+ * tokens through calc(), so a single `--bn-shadow-x` rescales the whole hierarchy
+ * (ADR-0003). Component files must never hardcode a shadow or a colour literal.
+ */
+
+:root {
+  /* 结构 */
+  --bn-border-width: 3px;
+  --bn-border-color: #000000;
+  --bn-radius: 0;
+
+  /* 阴影偏移：承重结构，一个数字控制整套体系 */
+  --bn-shadow-x: 4px;
+  --bn-shadow-y: 4px;
+  --bn-shadow-reverse-x: -4px;
+  --bn-shadow-reverse-y: -4px;
+  --bn-shadow-color: var(--bn-border-color);
+
+  /* 阴影层级：由偏移派生，改基准即等比缩放 */
+  --bn-shadow-lift: calc(var(--bn-shadow-x) / 2);          /* 2px */
+  --bn-shadow-sm: calc(var(--bn-shadow-x) / 2) calc(var(--bn-shadow-y) / 2) 0 0 var(--bn-shadow-color);
+  --bn-shadow-md: var(--bn-shadow-x) var(--bn-shadow-y) 0 0 var(--bn-shadow-color);
+  --bn-shadow-lg: calc(var(--bn-shadow-x) * 1.5) calc(var(--bn-shadow-y) * 1.5) 0 0 var(--bn-shadow-color);
+  --bn-shadow: var(--bn-shadow-md);
+
+  /* 交互位移 */
+  --bn-press: 3px;
+
+  /* 颜色 */
+  --bn-background: #FFFDF5;
+  --bn-secondary-background: #FFFFFF;
+  --bn-foreground: #000000;
+  --bn-main: #FFD23F;
+  --bn-main-foreground: #000000;
+  --bn-ring: #74B9FF;
+  --bn-overlay: rgb(0 0 0 / 0.8);
+
+  /* 强调色与语义映射 */
+  --bn-pink: #FF6B6B;
+  --bn-blue: #74B9FF;
+  --bn-green: #88D498;
+  --bn-orange: #FFA552;
+  --bn-lavender: #B8A9FA;
+  --bn-success: var(--bn-green);
+  --bn-warning: var(--bn-orange);
+  --bn-danger: var(--bn-pink);
+
+  /* 字体 */
+  --bn-font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --bn-font-display: var(--bn-font-family);
+  --bn-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --bn-font-weight-base: 500;
+  --bn-font-weight-heading: 700;
+
+  /* 动效 */
+  --bn-transition: 150ms ease;
+}
+
+/* 暗色：只重调中性色与阴影色，强调色（--bn-main 与五个 accent）保持不变。 */
+[data-theme="dark"] {
+  --bn-background: #1A1A1A;
+  --bn-secondary-background: #262626;
+  --bn-foreground: #FFFDF5;
+  --bn-border-color: #FFFDF5;
+  --bn-shadow-color: #FFFDF5;   /* 硬阴影翻白，保住错位印刷的观感 */
+  --bn-ring: #74B9FF;
+}
+
+/* 语义变体映射：只把语义翻译成颜色，不做任何布局或形态决策。
+ * 尺寸、描边、幽灵与强调色是「外观」，走 bn- 类名，不在这里挂 data-* 钩子。
+ * 未知变体名与无变体名表现一致——消费组件就地兜底，这里不设默认值。 */
+[data-variant="success"] {
+  --_variant-color: var(--bn-success);
+}
+
+[data-variant="warning"] {
+  --_variant-color: var(--bn-warning);
+}
+
+/* danger 与 error 是同一语义的两个名字（WCAG/HTML 习惯差异），必须永远同步。 */
+:is([data-variant="danger"], [data-variant="error"]) {
+  --_variant-color: var(--bn-danger);
+}
 }
 /* src/css/animations.css (@layer animations) */
 @layer animations {
