@@ -599,6 +599,95 @@ function registerBrowserChecks() {
       },
     ],
     [
+      'on a narrow viewport the stack keeps its safe area and stays click-through',
+      async (browser, server) => {
+        return withPage(
+          browser,
+          server,
+          'components/toast',
+          { viewport: { width: 320, height: 640 } },
+          async (page) => {
+            const state = await page.evaluate(() => {
+              bn.toast('Narrow', { duration: 0 });
+              bn.toast('Narrower', { duration: 0 });
+              const container = document.querySelector('.bn-toast-container').getBoundingClientRect();
+              const toasts = [...document.querySelectorAll('.bn-toast')].map((toast) =>
+                toast.getBoundingClientRect(),
+              );
+              const gapY = (toasts[0].bottom + toasts[1].top) / 2;
+              const gapX = toasts[0].left + 8;
+              return {
+                width: Math.round(container.width),
+                right: Math.round(window.innerWidth - container.right),
+                bottom: Math.round(window.innerHeight - container.bottom),
+                left: Math.round(container.left),
+                widest: Math.round(Math.max(...toasts.map((rect) => rect.right))),
+                atGap: document.elementFromPoint(Math.round(gapX), Math.round(gapY))?.className ?? '',
+                viewport: window.innerWidth,
+              };
+            });
+            must(state.left >= 0, `the stack hangs off the left edge (left ${state.left})`);
+            must(state.width === 288, `the column is ${state.width}px at 320px wide, expected 100vw - 2rem`);
+            must(state.right === 16 && state.bottom === 16, `insets are ${state.right}/${state.bottom}`);
+            must(state.widest <= state.viewport, `a toast overflows the viewport (${state.widest}px)`);
+            must(
+              state.atGap !== 'bn-toast-container' && state.atGap !== 'bn-toast',
+              `the gap between toasts is not click-through on a phone (hit ${state.atGap})`,
+            );
+            return `320px viewport: 288px column, 16px insets, no overflow, gap still click-through`;
+          },
+        );
+      },
+    ],
+    [
+      'the toast follows the explicit dark theme and never the system preference',
+      async (browser, server) => {
+        return withPage(
+          browser,
+          server,
+          'components/toast',
+          { colorScheme: 'dark' },
+          async (page) => {
+            const state = await page.evaluate(() => {
+              const read = () => {
+                const element = bn.toast('probe', { duration: 0 });
+                const computed = getComputedStyle(element);
+                const snapshot = {
+                  background: computed.backgroundColor,
+                  border: computed.borderTopColor,
+                  shadow: computed.boxShadow,
+                };
+                bn.toast.clear();
+                return snapshot;
+              };
+              const systemDark = read();
+              document.documentElement.setAttribute('data-theme', 'dark');
+              const explicitDark = read();
+              return { systemDark, explicitDark };
+            });
+            must(
+              state.systemDark.background === 'rgb(255, 255, 255)',
+              `a dark system preference repainted the toast (${state.systemDark.background}) — ` +
+                'dark mode is an explicit switch (ADR-0004)',
+            );
+            must(
+              state.explicitDark.background === 'rgb(38, 38, 38)',
+              `html[data-theme="dark"] did not reach the toast (${state.explicitDark.background})`,
+            );
+            must(
+              state.explicitDark.border === 'rgb(255, 253, 245)',
+              `the dark border is ${state.explicitDark.border}, expected the flipped token`,
+            );
+            must(
+              state.explicitDark.shadow.startsWith('rgb(255, 253, 245)'),
+              `the hard shadow did not flip to white: ${state.explicitDark.shadow}`,
+            );
+            return `system dark ignored (${state.systemDark.background}); html[data-theme="dark"] → #262626 surface, flipped border and shadow`;
+          },
+        );
+      },
+    ],
+    [
       'window.bn matches the spec §9 table, item by item, in a browser',
       async (browser, server) => {
         const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
