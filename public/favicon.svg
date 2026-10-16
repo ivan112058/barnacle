@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Barnacle">
+  <rect x="2" y="4" width="28" height="28" fill="#111111"/>
+  <rect x="0" y="0" width="28" height="28" fill="#ffd23f" stroke="#111111" stroke-width="3"/>
+  <path d="M6 22 A8 8 0 0 1 22 22 Z" fill="#111111"/>
+</svg>

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ page.title }} — {{ site.title }}{% endblock %}
+{% block content %}
+{% set base = site.base_url ~ lang_prefix %}
+<!-- template: templates/component.html -->
+<article class="site-component">
+  <nav class="site-breadcrumb" aria-label="Breadcrumb">
+    <a href="{{ base }}/components/">Components</a>
+    <span aria-hidden="true">/</span>
+    <span>{{ page.title }}</span>
+  </nav>
+
+  <h1 class="site-page__title">{{ page.title }}</h1>
+  {% if page.description %}<p class="site-lede">{{ page.description }}</p>{% endif %}
+
+  {# ticket 04 replaces this with the preview / code rendering layer. #}
+  <div class="site-prose">{{ page.content | safe }}</div>
+
+  <nav class="site-pager" aria-label="Components">
+    {% if prev_post %}<a class="site-pager__prev" href="{{ base }}{{ prev_post.url }}">← {{ prev_post.title }}</a>{% endif %}
+    {% if next_post %}<a class="site-pager__next" href="{{ base }}{{ next_post.url }}">{{ next_post.title }} →</a>{% endif %}
+  </nav>
+</article>
+{% endblock %}

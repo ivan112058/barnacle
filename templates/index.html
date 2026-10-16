@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{ site.title }} — a semantic-first Neubrutalism CSS library{% endblock %}
+{% block content %}
+{% set base = site.base_url ~ lang_prefix %}
+<div class="site-prose site-home">
+  {{ page.content | safe }}
+</div>
+
+{% for collection in collections %}
+{% if collection.items | length > 0 %}
+<section class="site-collection" aria-labelledby="collection-{{ collection.name }}">
+  <h2 id="collection-{{ collection.name }}">{{ collection.label }}</h2>
+  <ul class="site-grid">
+    {% for item in collection.items %}
+    <li class="site-card">
+      <a class="site-card__link" href="{{ base }}{{ item.url }}">
+        <span class="site-card__title">{{ item.title }}</span>
+        {% if item.description %}<span class="site-card__desc">{{ item.description }}</span>{% endif %}
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endfor %}
+{% endblock %}
