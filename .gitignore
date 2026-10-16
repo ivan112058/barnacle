@@ -1,0 +1,5 @@
+# seite build output
+/dist
+
+# dependencies (build-time only, never shipped)
+/node_modules

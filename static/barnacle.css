@@ -1,0 +1,81 @@
+@layer theme, base, components, animations, utilities;
+/* src/css/00-base.css (@layer base) */
+@layer base {
+/* 00-base.css — filled by ticket 06 (layer: base) */
+}
+/* src/css/01-theme.css (@layer theme) */
+@layer theme {
+/* 01-theme.css — filled by ticket 05 (layer: theme) */
+}
+/* src/css/animations.css (@layer animations) */
+@layer animations {
+/* animations.css — filled by later tickets (layer: animations) */
+}
+/* src/css/button.css (@layer components) */
+@layer components {
+/* button.css — filled by ticket 07 (layer: components) */
+}
+/* src/css/card.css (@layer components) */
+@layer components {
+/* card.css — filled by ticket 10 (layer: components) */
+}
+/* src/css/badge.css (@layer components) */
+@layer components {
+/* badge.css — filled by ticket 10 (layer: components) */
+}
+/* src/css/alert.css (@layer components) */
+@layer components {
+/* alert.css — filled by ticket 10 (layer: components) */
+}
+/* src/css/form.css (@layer components) */
+@layer components {
+/* form.css — filled by tickets 11 and 12 (layer: components) */
+}
+/* src/css/table.css (@layer components) */
+@layer components {
+/* table.css — filled by ticket 13 (layer: components) */
+}
+/* src/css/dialog.css (@layer components) */
+@layer components {
+/* dialog.css — filled by ticket 14 (layer: components) */
+}
+/* src/css/accordion.css (@layer components) */
+@layer components {
+/* accordion.css — filled by ticket 15 (layer: components) */
+}
+/* src/css/progress.css (@layer components) */
+@layer components {
+/* progress.css — filled by ticket 16 (layer: components) */
+}
+/* src/css/spinner.css (@layer components) */
+@layer components {
+/* spinner.css — filled by ticket 10 (layer: components) */
+}
+/* src/css/skeleton.css (@layer components) */
+@layer components {
+/* skeleton.css — filled by ticket 10 (layer: components) */
+}
+/* src/css/dropdown.css (@layer components) */
+@layer components {
+/* dropdown.css — filled by ticket 19 (layer: components) */
+}
+/* src/css/tabs.css (@layer components) */
+@layer components {
+/* tabs.css — filled by ticket 20 (layer: components) */
+}
+/* src/css/taginput.css (@layer components) */
+@layer components {
+/* taginput.css — filled by ticket 21 (layer: components) */
+}
+/* src/css/toast.css (@layer components) */
+@layer components {
+/* toast.css — filled by ticket 22 (layer: components) */
+}
+/* src/css/layout.css (@layer components) */
+@layer components {
+/* layout.css — filled by ticket 17 (layer: components) */
+}
+/* src/css/utilities.css (@layer utilities) */
+@layer utilities {
+/* utilities.css — filled by ticket 17 (layer: utilities) */
+}

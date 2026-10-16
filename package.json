@@ -1,0 +1,16 @@
+{
+  "name": "barnacle",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A semantic-first Neubrutalism UI library. Zero runtime dependencies.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "verify": "node scripts/verify.mjs"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
