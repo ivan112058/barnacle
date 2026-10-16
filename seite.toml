@@ -1,0 +1,54 @@
+[site]
+title = "Barnacle"
+description = "A semantic-first Neubrutalism UI library in pure CSS."
+# Project site on a sub-path: every page asset is referenced through site.base_url,
+# never as a root-absolute /static/... path (see spec §12).
+base_url = "https://ivan112058.github.io/barnacle"
+language = "en"
+author = "barnacle"
+
+# ---- loose pages: / , /usage , /customizing -------------------------------------------
+# seite requires every content file to live in a collection directory, and a collection
+# whose `directory` is "" swallows content/components/ as well (measured: URL collisions
+# and duplicated /button output), so the pages collection owns content/pages/.
+[[collections]]
+name = "pages"
+label = "Pages"
+directory = "pages"
+has_date = false
+has_rss = false
+listed = false
+url_prefix = ""
+nested = false
+default_template = "page.html"
+
+# ---- the component collection: /components/ index + /components/<slug> ----------------
+# The index is rendered by templates/components-index.html — seite resolves collection
+# indexes by that name only and silently ignores templates/components/index.html.
+[[collections]]
+name = "components"
+label = "Components"
+directory = "components"
+has_date = false
+has_rss = false
+listed = true
+url_prefix = "/components"
+nested = false
+default_template = "component.html"
+
+[build]
+output_dir = "dist"
+content_dir = "content"
+template_dir = "templates"
+static_dir = "static"
+data_dir = "data"
+public_dir = "public"
+# minify = true re-compresses static/*.css (and strips the trailing newline from
+# static/*.js), so the published artifacts would no longer be byte-identical to the
+# ones committed in static/. Measured with `node scripts/verify-site.mjs
+# --minify-experiment`; see the ticket Answer.
+minify = false
+
+[deploy]
+target = "github-pages"
+auto_commit = false

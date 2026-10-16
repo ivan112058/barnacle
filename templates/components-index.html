@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ page.title }} — {{ site.title }}{% endblock %}
+{% block content %}
+{% set base = site.base_url ~ lang_prefix %}
+<!-- template: templates/components-index.html -->
+<header class="site-page-head">
+  <h1 class="site-page__title">{{ page.title }}</h1>
+  {% if page.description %}<p class="site-lede">{{ page.description }}</p>{% endif %}
+</header>
+
+{% if page.content %}<div class="site-prose">{{ page.content | safe }}</div>{% endif %}
+
+{% if items | length > 0 %}
+<ul class="site-grid">
+  {% for item in items %}
+  <li class="site-card">
+    <a class="site-card__link" href="{{ base }}{{ item.url }}">
+      <span class="site-card__title">{{ item.title }}</span>
+      {% if item.description %}<span class="site-card__desc">{{ item.description }}</span>{% endif %}
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="site-empty">No component pages yet — they arrive with tickets 10–22.</p>
+{% endif %}
+{% endblock %}

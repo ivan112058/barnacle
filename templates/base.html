@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ site.title }}{% endblock %}</title>
+<meta name="description" content="{{ page.description | default(value=site.description) }}">
+<link rel="canonical" href="{{ site.base_url }}{{ page.url | default(value='/') }}">
+
+{#
+  Every asset goes through site.base_url. The site is served from the /barnacle/ sub-path,
+  so a root-absolute "/static/..." reference would 404; site.base_url also becomes the dev
+  origin (http://127.0.0.1:<port>) under `seite serve`, which site.base_path would not.
+#}
+<link rel="icon" type="image/svg+xml" href="{{ site.base_url }}/favicon.svg">
+<link rel="stylesheet" href="{{ site.base_url }}/static/barnacle.css">
+<link rel="stylesheet" href="{{ site.base_url }}/static/style.css">
+{% block head %}{% endblock %}
+</head>
+<body class="site-body">
+<a class="site-skip" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <a class="site-brand" href="{{ site.base_url }}{{ lang_prefix }}/">{{ site.title }}</a>
+  <nav class="site-nav" aria-label="Main">
+    <a href="{{ site.base_url }}{{ lang_prefix }}/usage">Usage</a>
+    <a href="{{ site.base_url }}{{ lang_prefix }}/customizing">Customizing</a>
+    <a href="{{ site.base_url }}{{ lang_prefix }}/components/">Components</a>
+  </nav>
+</header>
+
+<main id="main" class="site-main">
+{% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <p>
+    MIT licensed.
+    <a href="https://github.com/ivan112058/barnacle">Source</a>.
+    Built from <code>src/</code> with esbuild, published from <code>static/</code>.
+  </p>
+</footer>
+
+<script src="{{ site.base_url }}/static/barnacle.js" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
