@@ -7,14 +7,15 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node --test tests/js/base.test.mjs",
+    "test": "node --test tests/js/base.test.mjs tests/js/toast.test.mjs",
     "verify": "node scripts/verify.mjs",
     "verify:theme": "node scripts/verify-theme.mjs",
     "verify:site": "node scripts/verify-site.mjs",
     "verify:deploy": "node scripts/verify-deploy.mjs",
     "verify:demo": "node scripts/verify-demo.mjs",
     "verify:base": "node scripts/verify-base.mjs",
-    "verify:button": "node scripts/verify-button.mjs"
+    "verify:button": "node scripts/verify-button.mjs",
+    "verify:toast": "node scripts/verify-toast.mjs"
   },
   "dependencies": {},
   "devDependencies": {
