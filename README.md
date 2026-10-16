@@ -6,8 +6,9 @@ Barnacle styles it.
 
 > **Status: v1 in progress.** The build chain (ticket 01), this documentation site's skeleton
 > (ticket 02), its demo rendering layer (ticket 04) and the GitHub Pages deploy workflow
-> (ticket 03) are in place. Components, theme tokens and the full site content land in later
-> tickets, so the page styles are still placeholders.
+> (ticket 03) are in place, and so are the library's theme tokens (ticket 05) and its base
+> layer (ticket 06) — `static/barnacle.css` now carries both on top of the component sources.
+> The full site content lands in later tickets, so the docs page styles are still minimal.
 
 ## Repository layout
 

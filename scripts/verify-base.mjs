@@ -1002,6 +1002,28 @@ function readTypographyPage() {
   return readFileSync(abs(TYPOGRAPHY_PAGE), 'utf8');
 }
 
+/**
+ * innerHTML of the first element whose class attribute contains `className`, walking the tag
+ * depth by hand. Used to inspect the rendered Markdown body on its own, so that markup the
+ * templates inject around it (templates/component.html supplies the H1 and the H2) cannot be
+ * mistaken for content the fence leaked.
+ */
+function extractContainer(html, className) {
+  const open = new RegExp(`<([a-z][a-z0-9]*)\\b[^>]*class="[^"]*\\b${className}\\b[^"]*"[^>]*>`, 'i').exec(
+    html,
+  );
+  if (!open) return null;
+  const tag = open[1];
+  const tokens = new RegExp(`<(/?)${tag}\\b[^>]*>`, 'gi');
+  tokens.lastIndex = open.index + open[0].length;
+  let depth = 1;
+  for (let token = tokens.exec(html); token; token = tokens.exec(html)) {
+    depth += token[1] === '/' ? -1 : 1;
+    if (depth === 0) return html.slice(open.index + open[0].length, token.index);
+  }
+  must(false, `the <${tag} class="${className}"> element is never closed`);
+}
+
 await check('content/components/typography.md exists, without a BOM, titled Typography', () => {
   const bytes = readFileSync(abs(TYPOGRAPHY_PAGE));
   must(
@@ -1143,12 +1165,40 @@ if (SKIP_SITE) {
     // looking for `&lt;h1&gt;`, and prove the example stayed inert by its heading tags.
     const escaped = [...page.matchAll(/&lt;/g)].length;
     must(escaped > 20, `the example markup must be escaped as entities, found ${escaped} "&lt;"`);
+
+    // Scope the leak check to the rendered body container, not the whole document: ticket 04's
+    // templates/component.html deliberately injects the one H2 of a component page
+    // (`<h2 class="site-component__section" id="example" data-site-heading="example">Example</h2>`,
+    // line 25) and spec §10 keeps authored headings at H3 and below, so a document-wide
+    // "no <h2>..<h6> anywhere" test can only ever be red. The intent is unchanged and now
+    // precise: no heading tag *inside the Markdown-rendered body* may be a live tag.
+    const body = extractContainer(page, 'site-prose');
+    must(body, `<div class="site-prose"> was not found — the Markdown body has no container`);
     must(
-      !/<h[2-6][\s>]/.test(page),
-      'heading tags from the example leaked into the page — the fence was injected as live markup',
+      body.length > 0,
+      'the .site-prose container is empty — this check would pass vacuously',
     );
+    must(
+      !/<h[1-6][\s>]/.test(body),
+      'heading tags from the example leaked into the rendered body as live markup — ' +
+        'the fence was injected instead of escaped',
+    );
+
+    // The mirror guarantee, asserted once here and exhaustively per component page in
+    // scripts/verify-demo.mjs ("every component page renders exactly one H2, injected by the
+    // template", lines 357-378), which is why it is not repeated page by page.
+    const h2s = [...page.matchAll(/<h2\b[^>]*>/g)].map((match) => match[0]);
+    must(
+      h2s.length === 1 && /data-site-heading=/.test(h2s[0]),
+      `a component page must render exactly one H2 and it must be the template-injected one, ` +
+        `found ${h2s.length}: ${h2s.join(' | ')}`,
+    );
+
     must(page.includes('Heading level six'), 'the example text never reached the page');
-    return `${page.length} bytes, ${escaped} escaped "<", no heading leaked, <pre> present`;
+    return (
+      `${page.length} bytes, ${escaped} escaped "<", no live heading in .site-prose ` +
+      `(${body.length} bytes), one template H2, <pre> present`
+    );
   });
 }
 
