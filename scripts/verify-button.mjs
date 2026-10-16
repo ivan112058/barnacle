@@ -652,6 +652,24 @@ await check('every geometry value in src/css/button.css reads a --_ slot (no num
   must(translates.length > 0, 'no translate() is declared at all');
   const badTranslates = translates.filter((args) => !args.startsWith('var(--_'));
   must(badTranslates.length === 0, `translate() arguments must be slots: ${badTranslates.join('; ')}`);
+
+  // The slots themselves are the other half of the same rule: a component may re-point a slot at
+  // a token, or zero it on purpose (the ghost and the attached group), and nothing else. Writing
+  // a length straight into a slot would put the number back into the component file.
+  const badSlots = allDeclarations
+    .filter(({ property }) => property.startsWith('--_'))
+    .filter(({ property, value }) => {
+      if (value.startsWith('var(--')) return false;
+      if (value === 'transparent') return false; // a border colour, i.e. no colour at all
+      if (value === 'none' && property.startsWith('--_shadow')) return false;
+      if (value === '0' && /^--_(?:lift|press)-[xy]$/.test(property)) return false;
+      return true;
+    })
+    .map(({ selector, property, value }) => `${selector} { ${property}: ${value} }`);
+  must(
+    badSlots.length === 0,
+    `a slot may only be pointed at a token or zeroed on purpose: ${badSlots.join('; ')}`,
+  );
   return `${shadows.length} shadows, ${translates.length} translate() calls, all slot references`;
 });
 
