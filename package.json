@@ -9,7 +9,8 @@
     "build": "node scripts/build.mjs",
     "verify": "node scripts/verify.mjs",
     "verify:theme": "node scripts/verify-theme.mjs",
-    "verify:site": "node scripts/verify-site.mjs"
+    "verify:site": "node scripts/verify-site.mjs",
+    "verify:demo": "node scripts/verify-demo.mjs"
   },
   "dependencies": {},
   "devDependencies": {
