@@ -15,6 +15,25 @@
 <link rel="icon" type="image/svg+xml" href="{{ site.base_url }}/favicon.svg">
 <link rel="stylesheet" href="{{ site.base_url }}/static/barnacle.css">
 <link rel="stylesheet" href="{{ site.base_url }}/static/style.css">
+
+{#
+  The stored theme is applied before the first paint, so a dark page never flashes light.
+  Absent storage means "no data-theme attribute", which is light (ADR-0004: dark mode is an
+  explicit switch, never a system preference). The script is deliberately standalone — the
+  theme switch must not depend on static/barnacle.js, which may not be loaded at all.
+#}
+<script>
+  (function () {
+    try {
+      var stored = localStorage.getItem('barnacle-site-theme');
+      if (stored === 'dark' || stored === 'light') {
+        document.documentElement.dataset.theme = stored;
+      }
+    } catch (error) {
+      /* storage can be unavailable (private mode): stay light */
+    }
+  })();
+</script>
 {% block head %}{% endblock %}
 </head>
 <body class="site-body">
@@ -26,6 +45,13 @@
     <a href="{{ site.base_url }}{{ lang_prefix }}/usage">Usage</a>
     <a href="{{ site.base_url }}{{ lang_prefix }}/customizing">Customizing</a>
     <a href="{{ site.base_url }}{{ lang_prefix }}/components/">Components</a>
+    {#
+      The theme switch. Its whole state is data-theme on <html> (ADR-0004) — never on <body>,
+      where the library's shadow tokens have already been substituted and would not flip
+      (orchestrator decision §8). Wired by static/site.js; hidden by CSS while that script is
+      absent, so a no-script reader never meets a dead button.
+    #}
+    <button class="site-theme" type="button" data-site-theme-toggle aria-pressed="false">Dark mode</button>
   </nav>
 </header>
 
@@ -42,6 +68,7 @@
 </footer>
 
 <script src="{{ site.base_url }}/static/barnacle.js" defer></script>
+<script src="{{ site.base_url }}/static/site.js" defer></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>
