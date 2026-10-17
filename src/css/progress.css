@@ -1,1 +1,200 @@
-/* progress.css — filled by ticket 16 (layer: components) */
+/* progress.css — one slot and one fill for two elements: the bare <progress> and the bare
+ * <meter>. (layer: components, assigned by CSS_MANIFEST in scripts/build.mjs — this file writes
+ * no @layer.)
+ *
+ * Spec §5 gives this one file two components on purpose ("document granularity ≠ file granularity"),
+ * because the two elements are the same object: a bordered slot with a fill inside it. The shared
+ * half is written once, for `:is(progress, meter)`. What differs is only where the fill's colour
+ * comes from, and that difference is two rules at the end of the file — never a second copy of the
+ * box.
+ *
+ * Both elements are still styled as bare elements (ADR-0001): no class name is required, so
+ * correct markup is dressed by default.
+ *
+ * Fill geometry is left to the browser, on purpose. `value` / `max` (and `min` / `low` / `high` /
+ * `optimum` for meter) are the semantic input, and the UA already knows how to turn them into a
+ * width: ::-webkit-progress-value and ::-webkit-meter-*-value are laid out by the engine, and
+ * ::-moz-progress-bar does the same in Firefox. Re-deriving that ratio in CSS would mean the fill
+ * and the value could disagree; here they cannot, because the ratio is never restated. What this
+ * file decides is colour, and only colour.
+ *
+ * The fill is NOT animated, because a determinate bar does not change on its own. The only motion
+ * here belongs to the indeterminate state, and it is declared inside the guard rather than
+ * switched off afterwards (spec §7).
+ *
+ * Colours: the fill reads --_variant-color (published by 01-theme.css) with --bn-main as the
+ * component's own default, so `data-variant="success|warning|danger|error"` follows the semantic
+ * axis (spec §3 invariant 4). `meter` additionally has a meaning of its own that the browser
+ * drives from low/high/optimum; those three rules read the semantic tokens directly, because that
+ * mapping is the element's semantics rather than a variant anyone opts into.
+ */
+
+/* ==============================================================================================
+ * 1. The slot — declared once, for both elements.
+ *
+ *    `appearance: none` is what makes the engine hand the slot over to us: the UA chrome (groove,
+ *    bevel, rounded corners) goes away and the properties below become the whole appearance.
+ *    Everything that sizes the box is here and nowhere else, so `value` can never move it: the
+ *    track keeps its width while the fill inside it grows (the ticket's "slot width does not change
+ *    with value").
+ * ============================================================================================ */
+:is(progress, meter) {
+  appearance: none;
+  display: block;
+  inline-size: 100%;
+  block-size: 1.25rem;                   /* 20px: a bar's own height, not an interaction distance */
+  box-sizing: border-box;
+  overflow: hidden;                      /* the fill is clipped to the square corner, never rounded */
+
+  /* The structural box is declared here and in no state rule (spec §3 invariant 7). */
+  border-style: solid;
+  border-width: var(--bn-border-width);
+  border-color: var(--bn-border-color);
+  border-radius: var(--bn-radius);       /* 0 — square corners are the point (spec §6.1) */
+
+  /* The track. `background-color` rather than the `background` shorthand on purpose: an engine
+     that paints its own bar through this element would otherwise read --bn-main out of `color`. */
+  background-color: var(--bn-secondary-background);
+  box-shadow: var(--bn-shadow-sm);
+
+  vertical-align: middle;                /* a bar sits in a line of text without lifting it */
+}
+
+/* ==============================================================================================
+ * 2. The fill — the same two pseudo-elements for both elements, and the same colour source.
+ *
+ *    WebKit/Blink name the track ::-webkit-progress-bar and the fill ::-webkit-progress-value for
+ *    BOTH elements; the `meter`-specific track name is covered too so the slot never falls back to
+ *    engine default chrome. Firefox names the fill ::-moz-progress-bar (progress) and
+ *    ::-moz-meter-bar (meter).
+ * ============================================================================================ */
+:is(progress, meter)::-webkit-progress-bar {
+  background: var(--bn-secondary-background);
+}
+
+:is(progress, meter)::-webkit-progress-value {
+  background: var(--_variant-color, var(--bn-main));
+}
+
+:is(progress, meter)::-moz-progress-bar {
+  background: var(--_variant-color, var(--bn-main));
+}
+
+:is(progress, meter)::-moz-meter-bar {
+  background: var(--_variant-color, var(--bn-main));
+}
+
+/* `meter`'s own track, in case a future engine keeps the two shadow trees apart. */
+:is(progress, meter)::-webkit-meter-bar {
+  background: var(--bn-secondary-background);
+}
+
+/* ==============================================================================================
+ * 3. Meaning — data-variant, and only through the semantic colour channel.
+ *
+ *    The mapping itself lives in 01-theme.css; this file only decides where the colour is spent,
+ *    and that turns out to be two places, because the two elements do not paint their fill the
+ *    same way:
+ *
+ *      - `progress` paints it in ::-webkit-progress-value, which section 2 already colours from
+ *        the channel. One rule is enough.
+ *      - `meter` paints it in the ::-webkit-meter-*-value band the engine chose from
+ *        low/high/optimum, and measured in Chrome 155 that band wins over both the element's own
+ *        background and ::-webkit-meter-bar. Without the rule below, `data-variant` on a meter
+ *        silently does nothing. Since only ever one band is painted, colouring all three needs one
+ *        rule and cannot conflict.
+ *
+ *    A variant outranks the band, deliberately: the three bands are the element's own semantics,
+ *    and `data-variant` is the author saying "this bar is about status, not about a measurement".
+ *    A meter with no variant keeps all three bands (section 4).
+ * ============================================================================================ */
+:is(progress, meter):is([data-variant="success"], [data-variant="warning"], [data-variant="danger"], [data-variant="error"])::-webkit-meter-optimum-value,
+:is(progress, meter):is([data-variant="success"], [data-variant="warning"], [data-variant="danger"], [data-variant="error"])::-webkit-meter-suboptimum-value,
+:is(progress, meter):is([data-variant="success"], [data-variant="warning"], [data-variant="danger"], [data-variant="error"])::-webkit-meter-even-less-good-value {
+  background: var(--_variant-color);
+}
+
+/* ==============================================================================================
+ * 4. `meter`'s three bands — the element's own semantics, driven by the browser.
+ *
+ *    `low` / `high` / `optimum` are meaning the author declares in markup; the engine picks the
+ *    band from the parsed value, so these rules only colour the band it picked. This is why a
+ *    meter needs no data-variant to say something, and why it does not lose the bands when it has
+ *    none. The variant rules above sit later in the file and therefore win when both apply.
+ * ============================================================================================ */
+:is(progress, meter)::-webkit-meter-optimum-value {
+  background: var(--bn-success);
+}
+
+:is(progress, meter)::-webkit-meter-suboptimum-value {
+  background: var(--bn-warning);
+}
+
+:is(progress, meter)::-webkit-meter-even-less-good-value {
+  background: var(--bn-danger);
+}
+
+/* ==============================================================================================
+ * 5. Indeterminate — a `progress` with no `value` attribute.
+ *
+ *    Measured in Chrome 155, twice over. First, `:indeterminate` matches a valueless `progress`
+ *    (as does `progress:not([value])`, but the pseudo-class says what it means, so that is the one
+ *    written here), while a valueless `meter` matches only the attribute form and keeps painting an
+ *    empty track either way. Second, `appearance: none` takes the engine's own indeterminate sweep
+ *    with it, and the bar then paints as an empty slot — a job of unknown length looking exactly
+ *    like a job at zero percent. That is the defect this section exists to fix.
+ *
+ *    The treatment: the main colour frame, and a diagonal hatch so "no fraction is known" is
+ *    legible even standing still. The hatch is derived from the bar's own font size, so it scales
+ *    with --bn-font-family rather than being a magic pixel count. No box metric is touched.
+ * ============================================================================================ */
+:is(progress, meter):indeterminate {
+  border-color: var(--bn-main);
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--bn-main) 0 0.25em,
+    var(--bn-secondary-background) 0 0.5em
+  );
+  background-size: 0.5em 0.5em;
+}
+
+:is(progress, meter):indeterminate::-webkit-progress-bar {
+  background: transparent;
+}
+
+/* ==============================================================================================
+ * 6. Motion — the indeterminate hatch crawls, and only where motion is welcome.
+ *
+ *    Inside the guard rather than switched off afterwards (spec §7): with
+ *    `prefers-reduced-motion: reduce` the stripes are simply still.
+ *
+ *    Why longhands and why --_crawl: measured in Chrome 155, the shorthand
+ *    `animation: bn-progress-crawl var(--_motion) linear infinite` computes to NOTHING at all
+ *    (animation-name, duration and iteration-count all fall back to their initial values) as soon
+ *    as the substituted value is more than one component — and --_motion is `var(--bn-transition)`,
+ *    i.e. `150ms ease`. Chrome re-parses a shorthand containing var() only after substitution, the
+ *    two-component value no longer fits <time>, and the invalid-at-computed-value-time shorthand
+ *    rolls back to the initial value rather than to the cascade. Declaring the longhands instead
+ *    survives the same substitution, and the one number this file needs (the crawl's own duration)
+ *    lives in --_crawl next to the 0.5em hatch period it is tied to.
+ * ============================================================================================ */
+@media (prefers-reduced-motion: no-preference) {
+  :is(progress, meter):indeterminate {
+    --_crawl: 750ms;                     /* one hatch period per crawl: the loop reads as motion */
+    animation-name: bn-progress-crawl;
+    animation-duration: var(--_crawl);
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+  }
+}
+
+/* One hatch period = the background tile, so the loop is seamless. */
+@keyframes bn-progress-crawl {
+  from {
+    background-position: 0 0;
+  }
+
+  to {
+    background-position: 0.5em 0;
+  }
+}

@@ -17,6 +17,7 @@
     "verify:demo": "node scripts/verify-demo.mjs",
     "verify:base": "node scripts/verify-base.mjs",
     "verify:button": "node scripts/verify-button.mjs",
+    "verify:progress": "node scripts/verify-progress.mjs",
     "verify:toast": "node scripts/verify-toast.mjs",
     "verify:tabs": "node scripts/verify-tabs.mjs",
     "verify:dropdown": "node scripts/verify-dropdown.mjs"
