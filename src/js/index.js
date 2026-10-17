@@ -14,20 +14,24 @@
  *
  * The entry is DOM-bearing by nature (it defines elements for a live document), so when it is
  * loaded where no DOM exists — `node --test` importing it for the namespace shape — it mounts
- * nothing and stays silent instead of throwing.
+ * nothing and stays silent instead of throwing. Registration needs a registry, not a document,
+ * so that is the gate.
  */
 
+import { BnDropdown } from './dropdown.js';
 import { createNamespace } from './namespace.js';
 import { BnTabs } from './tabs.js';
 import { toast } from './toast.js';
 
-const isBrowser = typeof document !== 'undefined' && typeof window !== 'undefined';
+const hasDom = typeof document !== 'undefined' && typeof window !== 'undefined';
 
 /** The mounted `window.bn` surface, or a detached one outside a browser. */
-const bn = createNamespace(isBrowser ? window : {}, { toast });
+const bn = hasDom ? createNamespace(window, { toast }) : createNamespace({}, { toast });
 
-// Ticket 19: bn.register('bn-dropdown', BnDropdown);
-bn.register('bn-tabs', BnTabs);
+if (typeof customElements !== 'undefined') {
+  bn.register('bn-dropdown', BnDropdown);
+  bn.register('bn-tabs', BnTabs);
+}
 // Ticket 21: bn.register('bn-taginput', BnTagInput);
 
 export default bn;

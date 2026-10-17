@@ -1,1 +1,34 @@
-/* animations.css — filled by later tickets (layer: animations) */
+/* animations.css — the library's entry animations, and nothing that is on by default.
+ * (layer: animations, assigned by CSS_MANIFEST in scripts/build.mjs — this file writes no @layer.)
+ *
+ * The rule of this file (spec §7): motion is *declared* inside
+ * `@media (prefers-reduced-motion: no-preference)` and never switched off afterwards. A visitor who
+ * asked for reduced motion gets no rule at all, not a 0.01ms animation that still fires its events.
+ *
+ * `@keyframes` is a global namespace with no layer protection, so every name carries the `bn-`
+ * prefix (ADR-0005, recipe §6.2). `bn-fade-in-up` is the library's one entry animation: a short
+ * rise with a fade, used by the components that appear rather than by the ones that move on hover
+ * (a hover displacement and an `animation ... both` would fight over `transform`).
+ *
+ * Ticket 19 fills it in for `<bn-dropdown>`; later components (alert, toast, tabs, details) reuse
+ * the same keyframes by adding a selector to the block below.
+ */
+
+@keyframes bn-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* The panel arrives; it never leaves with an animation, because the popover hides synchronously
+     and an exit animation would need a delay the component cannot justify. */
+  bn-dropdown [popover]:popover-open {
+    animation: bn-fade-in-up var(--_motion) both;
+  }
+}
