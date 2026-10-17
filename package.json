@@ -13,6 +13,7 @@
     "verify": "node scripts/verify.mjs",
     "verify:theme": "node scripts/verify-theme.mjs",
     "verify:site": "node scripts/verify-site.mjs",
+    "verify:site-shell": "node scripts/verify-site-shell.mjs",
     "verify:deploy": "node scripts/verify-deploy.mjs",
     "verify:demo": "node scripts/verify-demo.mjs",
     "verify:base": "node scripts/verify-base.mjs",
