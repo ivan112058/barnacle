@@ -139,6 +139,61 @@ const DERIVED_VALUE = {
 /** spec §3 invariant 3 — the property whose value *is* the hard shadow. */
 const SHADOW_PROPERTY = 'box-shadow';
 
+/**
+ * A dimension literal — `4px`, `0.25rem`, `50%`. This is the thing a token has to replace, and the
+ * only number a component may write down in a shadow is the bare `0` of a hard shadow's blur and
+ * spread (spec §3 invariant 2: the shadow is offset, never blurred, never spread).
+ */
+const SHADOW_DIMENSION = /(?:^|[\s(,*/+-])(?:\d*\.)?\d+(?:px|rem|em|%|vw|vh|vmin|vmax|ch|ex|pt|pc|in|cm|mm|q)\b/i;
+
+/** Split a declaration value on top-level whitespace, keeping `calc(...)` and `var(...)` whole. */
+function shadowParts(value) {
+  const parts = [];
+  let depth = 0;
+  let current = '';
+  for (const char of value.trim()) {
+    if (char === '(') depth += 1;
+    else if (char === ')') depth -= 1;
+    if (/\s/.test(char) && depth === 0) {
+      if (current !== '') parts.push(current);
+      current = '';
+      continue;
+    }
+    current += char;
+  }
+  if (current !== '') parts.push(current);
+  return parts;
+}
+
+/**
+ * spec §3 invariant 2/3 — a component's `box-shadow` must be *derived from the tokens*, never
+ * written down. Two shapes qualify, and only these two:
+ *
+ *   1. one tier by reference — `var(--_shadow-rest)`, `var(--bn-shadow-sm)`;
+ *   2. the tier spelled out — the offsets as `var(--bn-shadow-x/y)`, optionally through `calc()`;
+ *      a blur and a spread that are exactly `0`; the colour as a `--bn-*` token.
+ *
+ * Tickets 10, 13 and 16 re-derive the shape in place (a scaled shadow on an accent card, badge or
+ * alert; the same `0 0` on every hard shadow), and that is legitimate: the offsets still come from
+ * `--bn-shadow-x/y`. What the check has to keep catching is a component that stops deriving —
+ * `4px 4px 0 0 var(--bn-shadow-color)`, `var(--bn-shadow-x) var(--bn-shadow-y) 2px 0 var(...)`, or
+ * any colour written down instead of read. So the rule is stated over the *parts* of the value, not
+ * over the shape of a string: every part is a token reference, a `calc()` over tokens, or `0`.
+ */
+function isDerivedShadow(value) {
+  const trimmed = value.trim();
+  if (/^(?:none|inherit|initial|unset|revert)$/.test(trimmed)) return true;
+  // A dimension literal is a hard-coded offset, blur or spread wherever it sits — including inside
+  // a `calc()`, where `calc(4px + var(--bn-shadow-x))` derives nothing from the token that matters.
+  if (SHADOW_DIMENSION.test(trimmed)) return false;
+  return shadowParts(trimmed).every(
+    (part) =>
+      part === '0' ||
+      /^var\(--(?:_|bn-)[\w-]+\)$/.test(part) ||
+      /^calc\([^()]*(?:\([^()]*\)[^()]*)*\)$/.test(part),
+  );
+}
+
 /** spec §7 + decision D — the touch-stickiness guard a hover rule must sit inside. */
 const HOVER_GUARD = /hover:\s*hover/;
 
@@ -518,21 +573,19 @@ await check('every translate() is a slot reference, and the slots are used every
 });
 
 await check('no box-shadow outside 00-base.css is a literal (spec §3 invariant 2/3)', () => {
-  const offenders = componentDeclarations
-    .filter((declaration) => declaration.property === SHADOW_PROPERTY)
-    .filter((declaration) => !/^var\(--_(?:shadow|bn-)/.test(declaration.value) && !/^(?:none|inherit|initial|unset|revert)$/.test(declaration.value))
+  const shadows = componentDeclarations.filter((declaration) => declaration.property === SHADOW_PROPERTY);
+  const offenders = shadows
+    .filter((declaration) => !isDerivedShadow(declaration.value))
     .map(
       (declaration) =>
         `${locate(declaration.file, sources.get(declaration.file).blanked, declaration.at)} — ${declaration.selector} { box-shadow: ${declaration.value} }`,
     );
   must(
     offenders.length === 0,
-    `a component paints a shadow of its own instead of reading a tier: ${offenders.join('; ')}`,
+    `a component paints a shadow of its own instead of deriving it from the tokens (spec §3 invariant 2/3): ${offenders.join('; ')}`,
   );
-  const tiers = componentDeclarations.filter(
-    (declaration) => declaration.property === SHADOW_PROPERTY && /var\(--_shadow/.test(declaration.value),
-  ).length;
-  return `${tiers} component shadow declarations, every one a tier reference`;
+  const byTier = shadows.filter((declaration) => /^var\(--[\w-]+\)$/.test(declaration.value.trim())).length;
+  return `${shadows.length} component shadow declaration(s), every one derived from --bn-* tokens (${byTier} as a single tier reference, ${shadows.length - byTier} spelled out from the offset tokens)`;
 });
 
 await check('every component hover rule reads the geometry slots — no transform, no shadow value', () => {
