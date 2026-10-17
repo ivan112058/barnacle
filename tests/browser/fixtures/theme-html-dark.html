@@ -1,0 +1,20 @@
+<!doctype html>
+<!--
+  The theme switch on <html> — the documented way (orchestrator-decisions §8): the derived
+  shadow chain is substituted where it is declared, on :root, so the override has to be there
+  for the hard shadow to repaint in the dark ink.
+-->
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="data:," />
+    <title>barnacle browser harness — data-theme on html</title>
+    <link rel="stylesheet" href="/barnacle/static/barnacle.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Dark on &lt;html&gt;</h1>
+      <button id="bare" type="button">Press me</button>
+    </main>
+  </body>
+</html>

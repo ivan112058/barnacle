@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="data:," />
+    <title>barnacle browser harness — an unlayered user rule</title>
+    <link rel="stylesheet" href="/barnacle/static/barnacle.css" />
+    <!--
+      ADR-0006, the half that protects every consumer of this library: a rule the user writes
+      outside any layer beats everything the library ships inside its layers, whatever the
+      specificity. The library dresses a bare <button> through `:is(button, .bn-button)`, whose
+      specificity is (0,1,0) because :is() takes its most specific argument; this rule is (0,0,1)
+      and still wins, which is only possible because of the layers.
+    -->
+    <style>
+      button {
+        background-color: #008000;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>An unlayered override</h1>
+      <button id="unlayered" type="button">Press me</button>
+    </main>
+  </body>
+</html>
