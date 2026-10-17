@@ -21,6 +21,7 @@
 import { BnDropdown } from './dropdown.js';
 import { createNamespace } from './namespace.js';
 import { BnTabs } from './tabs.js';
+import { BnTagInput } from './taginput.js';
 import { toast } from './toast.js';
 
 const hasDom = typeof document !== 'undefined' && typeof window !== 'undefined';
@@ -31,7 +32,7 @@ const bn = hasDom ? createNamespace(window, { toast }) : createNamespace({}, { t
 if (typeof customElements !== 'undefined') {
   bn.register('bn-dropdown', BnDropdown);
   bn.register('bn-tabs', BnTabs);
+  bn.register('bn-taginput', BnTagInput);
 }
-// Ticket 21: bn.register('bn-taginput', BnTagInput);
 
 export default bn;
