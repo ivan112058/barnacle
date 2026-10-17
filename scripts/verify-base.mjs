@@ -33,6 +33,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import { blankComments, declarations, matchBrace } from './lib/css.mjs';
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const abs = (...parts) => path.join(ROOT, ...parts);
 
@@ -142,39 +144,6 @@ async function check(name, fn) {
   }
 }
 
-/* ---------------------------------- CSS structure ---------------------------------- */
-
-/**
- * Replace comment bodies with spaces of identical length: braces inside a comment can no longer
- * confuse brace matching, and offsets still line up with the raw text, so the file marker
- * comments the build chain writes stay findable by index.
- */
-function blankComments(text) {
-  return text.replace(/\/\*[\s\S]*?\*\//g, (comment) => ' '.repeat(comment.length));
-}
-
-/** Index of the `}` closing the `{` at `openIndex`. Strings are tracked, comments are not. */
-function matchBrace(text, openIndex, label) {
-  must(text[openIndex] === '{', `${label}: expected "{" at index ${openIndex}`);
-  let depth = 0;
-  let quote = null;
-  for (let i = openIndex; i < text.length; i += 1) {
-    const ch = text[i];
-    if (quote) {
-      if (ch === '\\') i += 1;
-      else if (ch === quote) quote = null;
-      continue;
-    }
-    if (ch === '"' || ch === "'") quote = ch;
-    else if (ch === '{') depth += 1;
-    else if (ch === '}') {
-      depth -= 1;
-      if (depth === 0) return i;
-    }
-  }
-  throw new Error(`${label}: unbalanced braces — no matching "}" for the "{" at index ${openIndex}`);
-}
-
 /**
  * All `selector { body }` rules of a block body, flattened out of any at-rule wrapper (a rule
  * inside `@media (hover: hover) { … }` is returned with its own selector). The checks below are
@@ -197,16 +166,6 @@ function topLevelRules(text) {
     i = close + 1;
   }
   return rules;
-}
-
-/** `property: value` pairs declared directly in a rule body, in document order. */
-function declarations(body) {
-  const pairs = [];
-  const re = /(--[\w-]+|[\w-]+)\s*:\s*([^;{}]+)/g;
-  for (const match of body.matchAll(re)) {
-    pairs.push([match[1], match[2].replace(/\s+/g, ' ').trim()]);
-  }
-  return pairs;
 }
 
 /**

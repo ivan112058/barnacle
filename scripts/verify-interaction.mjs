@@ -33,6 +33,15 @@ import { fileURLToPath } from 'node:url';
 // second copy of either would drift, and the audit would then be measuring the wrong files.
 import { CSS_MANIFEST, LAYER_DECLARATION, layerBlock } from './build.mjs';
 
+import { blankComments, declarationsOf, matchBrace } from './lib/css.mjs';
+import {
+  DEFAULT_SLOT_VALUES as DEFAULT_SLOTS,
+  FROZEN_SLOT_VALUES as FROZEN_SLOTS,
+  INTERNAL_SLOT,
+  PUBLIC_TOKEN,
+  PUBLIC_TOKENS,
+} from './lib/tokens.mjs';
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const abs = (...parts) => path.join(ROOT, ...parts);
 
@@ -43,83 +52,8 @@ const abs = (...parts) => path.join(ROOT, ...parts);
 /** The file that owns the single source (orchestrator-decisions §4: "06 declares, 07 consumes"). */
 const BASE_FILE = '00-base.css';
 
-/**
- * ADR-0005: the base layer may name a public token or an internal slot, and nothing else (no
- * invented `--brand-*`, no bare `--lift`). `--_variant-color` is the one slot another layer
- * publishes (01-theme.css maps `data-variant` onto it).
- */
-const PUBLIC_TOKEN = /^--bn-[a-z0-9-]+$/;
-const INTERNAL_SLOT = /^--_[a-z0-9-]+$/;
-
-/** spec.md §6.1 — the complete public token vocabulary. Nothing else may be written down. */
-const PUBLIC_TOKENS = new Set([
-  '--bn-border-width',
-  '--bn-border-color',
-  '--bn-radius',
-  '--bn-shadow-x',
-  '--bn-shadow-y',
-  '--bn-shadow-reverse-x',
-  '--bn-shadow-reverse-y',
-  '--bn-shadow-color',
-  '--bn-shadow-lift',
-  '--bn-shadow-sm',
-  '--bn-shadow-md',
-  '--bn-shadow-lg',
-  '--bn-shadow',
-  '--bn-press',
-  '--bn-background',
-  '--bn-secondary-background',
-  '--bn-foreground',
-  '--bn-main',
-  '--bn-main-foreground',
-  '--bn-ring',
-  '--bn-overlay',
-  '--bn-pink',
-  '--bn-blue',
-  '--bn-green',
-  '--bn-orange',
-  '--bn-lavender',
-  '--bn-success',
-  '--bn-warning',
-  '--bn-danger',
-  '--bn-font-family',
-  '--bn-font-display',
-  '--bn-font-mono',
-  '--bn-font-weight-base',
-  '--bn-font-weight-heading',
-  '--bn-transition',
-]);
-
 /** The one internal slot a component reads without declaring it (published by 01-theme.css). */
 const SEMANTIC_SLOT = '--_variant-color';
-
-/**
- * orchestrator-decisions §4 + recipes §2.3 — the frozen slot block of `00-base.css`, verbatim.
- * These are the *only* names a component may override, and the values below are the ones the
- * single source must declare.
- */
-const FROZEN_SLOTS = new Map([
-  ['--_lift-x', 'calc(var(--bn-shadow-lift) * -1)'],
-  ['--_lift-y', 'calc(var(--bn-shadow-lift) * -1)'],
-  ['--_press-x', 'var(--bn-press)'],
-  ['--_press-y', 'var(--bn-press)'],
-  ['--_shadow-rest', 'var(--bn-shadow-md)'],
-  ['--_shadow-hover', 'var(--bn-shadow-lg)'],
-  ['--_shadow-press', 'none'],
-  ['--_focus-ring', '3px solid var(--bn-ring)'],
-  ['--_focus-ring-offset', '3px'],
-  ['--_motion', 'var(--bn-transition)'],
-]);
-
-/** recipes §2.3 — the border/surface default slots of the same single source. */
-const DEFAULT_SLOTS = new Map([
-  ['--_border-rest', 'var(--bn-border-color)'],
-  ['--_border-hover', 'var(--bn-border-color)'],
-  ['--_border-press', 'var(--bn-border-color)'],
-  ['--_surface', 'var(--bn-secondary-background)'],
-  ['--_surface-hover', 'var(--bn-secondary-background)'],
-  ['--_surface-press', 'var(--bn-secondary-background)'],
-]);
 
 /**
  * The ten geometry slots of orchestrator-decisions §4 form a *value chain*: each one is derived
@@ -283,35 +217,6 @@ function sameSelector(left, right) {
   return normalise(left) === normalise(right);
 }
 
-/* ================================== CSS source reading ================================== */
-
-/** Comment bodies become spaces: prose about a declaration is not a declaration. */
-function blankComments(text) {
-  return text.replace(/\/\*[\s\S]*?\*\//g, (comment) => ' '.repeat(comment.length));
-}
-
-/** Index of the `}` closing the `{` at `openIndex`. Strings are tracked, comments are not. */
-function matchBrace(text, openIndex, label) {
-  must(text[openIndex] === '{', `${label}: expected "{" at index ${openIndex}`);
-  let depth = 0;
-  let quote = null;
-  for (let i = openIndex; i < text.length; i += 1) {
-    const ch = text[i];
-    if (quote) {
-      if (ch === '\\') i += 1;
-      else if (ch === quote) quote = null;
-      continue;
-    }
-    if (ch === '"' || ch === "'") quote = ch;
-    else if (ch === '{') depth += 1;
-    else if (ch === '}') {
-      depth -= 1;
-      if (depth === 0) return i;
-    }
-  }
-  throw new Error(`${label}: unbalanced braces — no matching "}" for the "{" at index ${openIndex}`);
-}
-
 /** Index of the `)` closing the `(` at `openIndex`, counting nested parentheses. */
 function balancedEnd(text, openIndex) {
   let depth = 0;
@@ -326,9 +231,10 @@ function balancedEnd(text, openIndex) {
 }
 
 /**
- * Every rule of one source file, flattened out of its at-rule wrappers while keeping the wrappers
- * in `conditions`. `at` is the index of the rule's prelude in the file, which is what turns a
- * finding into `src/css/button.css:169` instead of "somewhere in the library".
+ * The one rule walker that is not `scripts/lib/css.mjs`'s, and the reason is this script's whole
+ * job: a finding has to be reported as `file:line`, so each rule carries the file it came from and
+ * the offsets it started at. Everything else — comment blanking, brace matching, declarations —
+ * comes from the shared parser.
  */
 function parseRules(file, text, conditions = [], offset = 0) {
   const rules = [];
@@ -354,23 +260,6 @@ function parseRules(file, text, conditions = [], offset = 0) {
     i = close + 1;
   }
   return rules;
-}
-
-/** `property: value` pairs declared directly in a rule body, with their index in the source. */
-function declarations(rule) {
-  const pairs = [];
-  const re = /(--[\w-]+|[\w-]+)\s*:\s*([^;{}]+)/g;
-  for (const match of rule.body.matchAll(re)) {
-    pairs.push({
-      property: match[1],
-      value: match[2].replace(/\s+/g, ' ').trim(),
-      at: rule.bodyAt + match.index,
-      selector: rule.selector,
-      conditions: rule.conditions,
-      file: rule.file,
-    });
-  }
-  return pairs;
 }
 
 /** The manifest is the build chain's own list — an audit that read a second list would drift. */
@@ -407,7 +296,7 @@ function expectedArtifact() {
 /** Every rule of every source file, tagged with the file it came from. */
 const allRules = [...sources.values()].flatMap((source) => source.rules);
 /** Every declaration of every source file. */
-const allDeclarations = allRules.flatMap(declarations);
+const allDeclarations = allRules.flatMap(declarationsOf);
 
 const baseSource = sources.get(BASE_FILE);
 must(baseSource, `${BASE_FILE} is not in CSS_MANIFEST`);
@@ -418,7 +307,7 @@ const componentDeclarations = allDeclarations.filter((declaration) => declaratio
 
 /** The `:root` rule of 00-base.css, which is where the slots are declared. */
 const baseRootRule = baseSource.rules.find((rule) => rule.selector === ':root');
-const baseRootDeclarations = baseRootRule ? declarations(baseRootRule) : [];
+const baseRootDeclarations = baseRootRule ? declarationsOf(baseRootRule) : [];
 
 /** Every place a `--_` slot is given a value, anywhere in `src/css/`. */
 const slotSites = allDeclarations.filter((declaration) => INTERNAL_SLOT.test(declaration.property));
@@ -594,7 +483,7 @@ await check('every component hover rule reads the geometry slots — no transfor
 
   const offenders = [];
   for (const rule of hoverRules) {
-    for (const declaration of declarations(rule)) {
+    for (const declaration of declarationsOf(rule)) {
       if (!GEOMETRY_STATE_PROPERTIES.includes(declaration.property)) continue;
       const ok =
         declaration.property === SHADOW_PROPERTY
@@ -629,7 +518,7 @@ await check('every component hover rule reads the geometry slots — no transfor
       rule.conditions.some((condition) => HOVER_GUARD.test(condition)),
       `${file} declares ${JSON.stringify(selector)} outside @media (hover: hover): it would stick on touch (decision D)`,
     );
-    const declared = new Map(declarations(rule).map((declaration) => [declaration.property, declaration.value]));
+    const declared = new Map(declarationsOf(rule).map((declaration) => [declaration.property, declaration.value]));
     must(
       SLOT_TRANSLATE.test(declared.get('transform') ?? ''),
       `${file} must lift with translate(var(--_lift-x), var(--_lift-y)), got ${JSON.stringify(declared.get('transform'))}`,
@@ -640,7 +529,7 @@ await check('every component hover rule reads the geometry slots — no transfor
     );
   }
 
-  const repaints = hoverRules.filter((rule) => declarations(rule).length > 0 && !declarations(rule).some((d) => GEOMETRY_STATE_PROPERTIES.includes(d.property)));
+  const repaints = hoverRules.filter((rule) => declarationsOf(rule).length > 0 && !declarationsOf(rule).some((d) => GEOMETRY_STATE_PROPERTIES.includes(d.property)));
   return `${hoverRules.length} component hover rule(s); ${REQUIRED_HOVER_RULES.length} contract rule(s) verified slot by slot; ${repaints.length} colour-only state rule(s)`;
 });
 
@@ -649,7 +538,7 @@ await check('every component press rule reads the geometry slots too', () => {
   must(pressRules.length > 0, 'no component declares a press state — the object could never fall');
   const offenders = pressRules
     .filter((rule) => {
-      const declared = new Map(declarations(rule).map((declaration) => [declaration.property, declaration.value]));
+      const declared = new Map(declarationsOf(rule).map((declaration) => [declaration.property, declaration.value]));
       return (
         !SLOT_TRANSLATE.test(declared.get('transform') ?? '') ||
         !/var\(--_shadow-press\)|none/.test(declared.get('box-shadow') ?? '')
@@ -668,7 +557,7 @@ await check('the focus ring is drawn from the ring slots wherever it is restated
   must(rings.length > 0, 'no :focus-visible rule anywhere — WCAG F78');
   const offenders = [];
   for (const rule of rings) {
-    for (const declaration of declarations(rule)) {
+    for (const declaration of declarationsOf(rule)) {
       if (declaration.property === 'outline' && !/var\(--_focus-ring\)/.test(declaration.value)) {
         offenders.push(`${locate(rule.file, sources.get(rule.file).blanked, declaration.at)} — ${rule.selector} { outline: ${declaration.value} }`);
       }
@@ -682,7 +571,7 @@ await check('the focus ring is drawn from the ring slots wherever it is restated
   }
   must(offenders.length === 0, `the focus ring must read the slots: ${offenders.join('; ')}`);
   const offsets = rings.flatMap((rule) =>
-    declarations(rule)
+    declarationsOf(rule)
       .filter((declaration) => declaration.property === 'outline-offset')
       .map((declaration) => declaration.value),
   );
@@ -697,7 +586,7 @@ await check('the motion guard contains every transition that moves something', (
   // displacement, and predates this ticket — it is deliberately out of scope here rather than
   // quietly rewritten.)
   const transitions = allRules.flatMap((rule) =>
-    declarations(rule)
+    declarationsOf(rule)
       .filter((declaration) => declaration.property === 'transition')
       .map((declaration) => ({ rule, declaration })),
   );

@@ -31,6 +31,9 @@ import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { blankComments, declarations, matchBrace, parseRules } from './lib/css.mjs';
+import { FROZEN_SLOTS } from './lib/tokens.mjs';
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const abs = (...parts) => path.join(ROOT, ...parts);
 
@@ -47,27 +50,6 @@ const JS_ARTIFACTS = ['static/barnacle.js', 'static/barnacle.min.js'];
 const ELEMENT = 'bn-dropdown';
 const ITEM_CLASS = '.bn-dropdown-item';
 const EVENTS = ['bn:open', 'bn:close', 'bn:select'];
-
-/** The frozen geometry slots of 00-base.css (orchestrator-decisions §4). A component consumes
- *  these; inventing one would be a second source, which is ticket 09's audit. */
-const FROZEN_SLOTS = new Set([
-  '--_lift-x',
-  '--_lift-y',
-  '--_press-x',
-  '--_press-y',
-  '--_shadow-rest',
-  '--_shadow-hover',
-  '--_shadow-press',
-  '--_focus-ring',
-  '--_focus-ring-offset',
-  '--_motion',
-  '--_border-rest',
-  '--_border-hover',
-  '--_border-press',
-  '--_surface',
-  '--_surface-hover',
-  '--_surface-press',
-]);
 
 /** 01-theme.css publishes the semantic channel; a component only reads it. */
 const SEMANTIC_SLOT = '--_variant-color';
@@ -126,68 +108,6 @@ async function check(name, fn) {
     failures.push(name);
     console.log(`FAIL  ${name} — ${error.message}`);
   }
-}
-
-/* --------------------------------- CSS source reading --------------------------------- */
-
-/** Comment bodies become spaces of the same length: braces and words inside prose stop counting. */
-function blankComments(text) {
-  return text.replace(/\/\*[\s\S]*?\*\//g, (comment) => ' '.repeat(comment.length));
-}
-
-/** Index of the `}` closing the `{` at `openIndex`. */
-function matchBrace(text, openIndex, label) {
-  must(text[openIndex] === '{', `${label}: expected "{" at index ${openIndex}`);
-  let depth = 0;
-  let quote = null;
-  for (let i = openIndex; i < text.length; i += 1) {
-    const ch = text[i];
-    if (quote) {
-      if (ch === '\\') i += 1;
-      else if (ch === quote) quote = null;
-      continue;
-    }
-    if (ch === '"' || ch === "'") quote = ch;
-    else if (ch === '{') depth += 1;
-    else if (ch === '}') {
-      depth -= 1;
-      if (depth === 0) return i;
-    }
-  }
-  throw new Error(`${label}: unbalanced braces — no matching "}" for the "{" at index ${openIndex}`);
-}
-
-/** Every `selector { body }` rule, flattened out of its at-rule wrappers but keeping the wrapper
- *  preludes in `conditions` — that is what makes "the motion sits inside no-preference" a fact. */
-function parseRules(text, conditions = []) {
-  const rules = [];
-  let i = 0;
-  while (i < text.length) {
-    while (i < text.length && /\s/.test(text[i])) i += 1;
-    if (i >= text.length) break;
-    const open = text.indexOf('{', i);
-    if (open === -1) break;
-    const semi = text.indexOf(';', i);
-    if (semi !== -1 && semi < open) {
-      i = semi + 1;
-      continue;
-    }
-    const prelude = text.slice(i, open).trim();
-    const close = matchBrace(text, open, prelude);
-    const body = text.slice(open + 1, close);
-    if (prelude.startsWith('@')) rules.push(...parseRules(body, [...conditions, prelude]));
-    else rules.push({ selector: prelude, body, conditions });
-    i = close + 1;
-  }
-  return rules;
-}
-
-function declarations(body) {
-  const pairs = [];
-  for (const match of body.matchAll(/(--[\w-]+|[\w-]+)\s*:\s*([^;{}]+)/g)) {
-    pairs.push([match[1], match[2].replace(/\s+/g, ' ').trim()]);
-  }
-  return pairs;
 }
 
 /* -------------------------------------- the page -------------------------------------- */

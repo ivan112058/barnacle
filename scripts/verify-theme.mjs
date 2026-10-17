@@ -28,6 +28,8 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { declarations, matchBrace } from './lib/css.mjs';
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const abs = (...parts) => path.join(ROOT, ...parts);
 
@@ -152,31 +154,6 @@ function readArtifact() {
   return readFileSync(abs('static/barnacle.css'), 'utf8');
 }
 
-/**
- * Index of the `}` that closes the block opened by the `{` at `openIndex`.
- * Comment-stripped input only, so string state is cheap to track.
- */
-function matchBrace(text, openIndex, label) {
-  must(text[openIndex] === '{', `${label}: expected "{" at index ${openIndex}`);
-  let depth = 0;
-  let quote = null;
-  for (let i = openIndex; i < text.length; i += 1) {
-    const ch = text[i];
-    if (quote) {
-      if (ch === '\\') i += 1;
-      else if (ch === quote) quote = null;
-      continue;
-    }
-    if (ch === '"' || ch === "'") quote = ch;
-    else if (ch === '{') depth += 1;
-    else if (ch === '}') {
-      depth -= 1;
-      if (depth === 0) return i;
-    }
-  }
-  throw new Error(`${label}: unbalanced braces — no matching "}" for the "{" at index ${openIndex}`);
-}
-
 /** All top-level rule blocks `selector { body }` of a text blob. */
 function topLevelRules(text) {
   const rules = [];
@@ -238,16 +215,6 @@ function splitTopLevel(value) {
   }
   if (current) parts.push(current);
   return parts;
-}
-
-/** `customProp: value` pairs declared directly in a rule body, in document order. */
-function declarations(body) {
-  const pairs = [];
-  const re = /(--[\w-]+|[\w-]+)\s*:\s*([^;{}]+)/g;
-  for (const match of body.matchAll(re)) {
-    pairs.push([match[1], match[2].replace(/\s+/g, ' ').trim()]);
-  }
-  return pairs;
 }
 
 /** The `:root` rules of a layer body, as declared pairs. */

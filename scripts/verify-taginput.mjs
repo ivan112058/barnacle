@@ -44,6 +44,9 @@ import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { blankComments, declarations, matchBrace, parseRules } from './lib/css.mjs';
+import { FROZEN_SLOTS, HYGIENE, PUBLIC_TOKENS } from './lib/tokens.mjs';
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const abs = (...parts) => path.join(ROOT, ...parts);
 const DIST = abs('dist');
@@ -69,26 +72,6 @@ const API = ['tags', 'setTags', 'addTag', 'removeTagAt', 'clearTags'];
 /** The gestures the ticket names, spelled as the state machine spells them. */
 const SOURCES = ['api', 'backspace', 'input', 'remove'];
 
-/** spec.md §6.1 — the complete public token vocabulary. A component may only read from it. */
-const PUBLIC_TOKENS = new Set([
-  '--bn-border-width', '--bn-border-color', '--bn-radius', '--bn-shadow-x', '--bn-shadow-y',
-  '--bn-shadow-reverse-x', '--bn-shadow-reverse-y', '--bn-shadow-color', '--bn-shadow-lift',
-  '--bn-shadow-sm', '--bn-shadow-md', '--bn-shadow-lg', '--bn-shadow', '--bn-press',
-  '--bn-background', '--bn-secondary-background', '--bn-foreground', '--bn-main',
-  '--bn-main-foreground', '--bn-ring', '--bn-overlay', '--bn-pink', '--bn-blue', '--bn-green',
-  '--bn-orange', '--bn-lavender', '--bn-success', '--bn-warning', '--bn-danger',
-  '--bn-font-family', '--bn-font-display', '--bn-font-mono', '--bn-font-weight-base',
-  '--bn-font-weight-heading', '--bn-transition',
-]);
-
-/** orchestrator-decisions §4 — the internal slots 00-base.css declares. */
-const FROZEN_SLOTS = new Set([
-  '--_lift-x', '--_lift-y', '--_press-x', '--_press-y', '--_shadow-rest', '--_shadow-hover',
-  '--_shadow-press', '--_focus-ring', '--_focus-ring-offset', '--_motion', '--_border-rest',
-  '--_border-hover', '--_border-press', '--_surface', '--_surface-hover', '--_surface-press',
-]);
-
-const HYGIENE = { publicToken: /^--bn-[a-z0-9-]+$/, internalToken: /^--_[a-z0-9-]+$/ };
 const COLOUR_LITERAL = /#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(|\boklch\(|\bcolor\(/;
 const GEOMETRY_PROPERTIES = [
   'transform', 'translate', 'box-shadow', 'outline', 'outline-offset', 'transition',
@@ -137,66 +120,6 @@ async function check(name, fn) {
 }
 
 const read = (rel, base = ROOT) => fs.readFileSync(path.join(base, rel), 'utf8');
-
-/* -------------------------------- CSS source reading ---------------------------------- */
-
-/** Comment bodies become spaces of the same length: braces and words inside prose stop counting. */
-function blankComments(text) {
-  return text.replace(/\/\*[\s\S]*?\*\//g, (comment) => ' '.repeat(comment.length));
-}
-
-function matchBrace(text, openIndex, label) {
-  must(text[openIndex] === '{', `${label}: expected "{" at index ${openIndex}`);
-  let depth = 0;
-  let quote = null;
-  for (let i = openIndex; i < text.length; i += 1) {
-    const ch = text[i];
-    if (quote) {
-      if (ch === '\\') i += 1;
-      else if (ch === quote) quote = null;
-      continue;
-    }
-    if (ch === '"' || ch === "'") quote = ch;
-    else if (ch === '{') depth += 1;
-    else if (ch === '}') {
-      depth -= 1;
-      if (depth === 0) return i;
-    }
-  }
-  throw new Error(`${label}: unbalanced braces — no matching "}"`);
-}
-
-/** Every `selector { body }` rule, flattened out of its at-rule wrappers, keeping the wrappers. */
-function parseRules(text, conditions = []) {
-  const rules = [];
-  let i = 0;
-  while (i < text.length) {
-    while (i < text.length && /\s/.test(text[i])) i += 1;
-    if (i >= text.length) break;
-    const open = text.indexOf('{', i);
-    if (open === -1) break;
-    const semi = text.indexOf(';', i);
-    if (semi !== -1 && semi < open) {
-      i = semi + 1;
-      continue;
-    }
-    const prelude = text.slice(i, open).trim();
-    const close = matchBrace(text, open, prelude);
-    const body = text.slice(open + 1, close);
-    if (prelude.startsWith('@')) rules.push(...parseRules(body, [...conditions, prelude]));
-    else rules.push({ selector: prelude, body, conditions });
-    i = close + 1;
-  }
-  return rules;
-}
-
-function declarations(body) {
-  const pairs = [];
-  for (const match of body.matchAll(/(--[\w-]+|[\w-]+)\s*:\s*([^;{}]+)/g)) {
-    pairs.push([match[1], match[2].replace(/\s+/g, ' ').trim()]);
-  }
-  return pairs;
-}
 
 /** The fenced code blocks of a Markdown file, with their info strings. */
 function fences(markdown) {
