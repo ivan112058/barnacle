@@ -1,1 +1,216 @@
-/* table.css — filled by ticket 13 (layer: components) */
+/* table.css — the bare table: `table`, `thead`, `tbody`, `tfoot`, `caption`, `th` and `td`, plus the
+ * three names this component has to invent because the markup carries no anchor for them.
+ * (layer: components, assigned by CSS_MANIFEST in scripts/build.mjs — this file writes no @layer.)
+ *
+ * Every rule here is written for an element, never for a class (ADR-0001): a table is dressed the
+ * way it is written by hand, and the three `bn-` names below are the cases where the markup has no
+ * semantic anchor at all.
+ *
+ * Three decisions carry the whole file.
+ *
+ * 1. BORDER MODEL: `border-collapse: separate` + `border-spacing: 0`, and every cell paints only
+ *    its block-start and inline-start edge.
+ *
+ *    The alternative, `border-collapse: collapse`, also yields a single line per edge — but it
+ *    yields it through the UA's border-conflict resolution (the widest border at a grid edge wins,
+ *    and the winning border box is split half to each cell), so "the seam is one border wide"
+ *    stops being something this file can state, and nothing here can stop a later rule from
+ *    putting a second border on the same edge. In the separated model the ownership is structural:
+ *    the following cell draws the edge and the preceding cell declares `0`, the two border boxes
+ *    touch because the spacing is zero, and the table's own frame is the only border on the outer
+ *    edges. That is why the first row and the first column explicitly give up their start edges:
+ *    without those two rules the frame would be drawn twice, one border outside the other.
+ *    Two more properties of `separate` are worth keeping rather than losing: a per-cell
+ *    `box-shadow` survives (collapse clips it) and a sticky header keeps its border (a collapsed
+ *    border scrolls away from its cell in Chrome).
+ *
+ * 2. HIERARCHY WITHOUT FADING: the header band is *added* emphasis, never subtracted contrast. The
+ *    header row is filled with `--bn-main` and keeps the same black ink, in the display face at the
+ *    heading weight and on one line; the body keeps the page's own ink on the page's own surface at
+ *    full strength. So a reader can tell the two apart by area, weight and position, and the body
+ *    text never pays for it — the contrast of body text is untouched.
+ *
+ * 3. ALIGNMENT: text columns align to the start, always, by inheritance from `table`. A numeric
+ *    column takes `.bn-num`, which aligns it to the end and switches to tabular figures so the
+ *    digits line up column-wise. There is no attribute in HTML that says "this column is numeric",
+ *    which is exactly the case ADR-0001 and ADR-0005 reserve a `bn-` class name for. The class goes
+ *    on the header cell and on every cell of the column: a `<col>` looks like the natural home for
+ *    it, and it is not — measured in Chrome, `text-align` set on a table column never reaches the
+ *    cells, so the alignment has to be written on the cells.
+ *
+ * Two more names, same reasoning:
+ *
+ *   - `.bn-table-scroll` (and a `figure` that directly contains a table) is the scroll container.
+ *     A `<table>` is not a block container, so `overflow` does not apply to it and no rule can make
+ *     a bare table scroll itself; a wide table with no wrapper therefore widens the page. Markup
+ *     with a semantic wrapper uses it: a captioned table *is* a figure, so `figure` gets the
+ *     behaviour by element. Markup with none available (a table inside a card, a section) uses the
+ *     class on a plain `<div>`.
+ *   - `.bn-selected` paints a selected row. `aria-selected` is only meaningful on a row inside a
+ *     `grid`/`treegrid`, so a plain table has no correct attribute to hang this on; the class is the
+ *     appearance, and the page owns the state.
+ *
+ * Not in this file, on purpose: nothing is ever marked important (the layer contract makes the flag
+ * unnecessary — an unlayered rule of the user's already wins, ADR-0006), no colour literal
+ * (01-theme.css owns every colour), no px literal (the scale is relative and the geometry comes from
+ * the `--_*` slots 00-base.css declares), and no `translate()` — a table row is not a thing that
+ * lifts off its shadow.
+ */
+
+/* ==============================================================================================
+ * 1. The table box: the frame, the surface, the small shadow tier.
+ *
+ *    The shadow tier is re-pointed through the shared slot rather than written here, the way every
+ *    component does it (orchestrator §4). It is the small tier because a table is a static block,
+ *    not an interactive object: it must not compete with a button (ADR-0003).
+ *
+ *    `box-sizing: border-box` matters: with `inline-size: 100%` the frame has to live inside the
+ *    available width, otherwise every table would overflow its container by two border widths.
+ * ============================================================================================ */
+table {
+  --_shadow-rest: var(--bn-shadow-sm);
+
+  box-sizing: border-box;
+  inline-size: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: var(--bn-border-width) solid var(--bn-border-color);
+  border-radius: var(--bn-radius); /* 0 — square corners are the point (spec §6.1) */
+  box-shadow: var(--_shadow-rest);
+  background: var(--bn-secondary-background);
+  color: var(--bn-foreground);
+  text-align: start; /* inherited by every cell: text columns align to the start of the line */
+}
+
+/* ==============================================================================================
+ * 2. The cells: one edge each.
+ *
+ *    Only the block-start and inline-start edges are ever drawn, so an interior seam is painted by
+ *    exactly one of the two cells that meet there. The four-sided shorthand is deliberately absent
+ *    from this file — it is the only thing that could put a second border on a shared edge.
+ * ============================================================================================ */
+:is(th, td) {
+  padding: 0.625rem 0.75rem;
+  border-block-start: var(--bn-border-width) solid var(--bn-border-color);
+  border-inline-start: var(--bn-border-width) solid var(--bn-border-color);
+  font-weight: var(--bn-font-weight-base);
+  vertical-align: top;
+}
+
+/* The frame already owns the outer edges, so a row group's first row gives its block-start edge up
+   (and so does the first row of a table whose rows are direct children of `table`). The second rule
+   then hands the edge back to every row group that has another row group in front of it: the header
+   and the body must still be separated by a line, and that line is drawn once, by the body.
+   The restore rule carries one more type selector than the suppression rule, which is what makes it
+   win inside the same layer — a `:first-of-type` on the row group would outrank it in the
+   pseudo-class column and silently keep the seam switched off. */
+table > :is(thead, tbody, tfoot) > tr:first-child > :is(th, td),
+table > tr:first-child > :is(th, td) {
+  border-block-start: 0;
+}
+
+table > :is(thead, tbody, tfoot) ~ :is(thead, tbody, tfoot) > tr:first-child > :is(th, td) {
+  border-block-start: var(--bn-border-width) solid var(--bn-border-color);
+}
+
+/* The same for the first column: the frame is the only thing on the inline-start edge of column 1. */
+table > :is(thead, tbody, tfoot) > tr > :first-child,
+table > tr > :first-child {
+  border-inline-start: 0;
+}
+
+/* ==============================================================================================
+ * 3. The header: emphasis added, never contrast removed (decision 2 above).
+ * ============================================================================================ */
+th {
+  font-family: var(--bn-font-display);
+  font-weight: var(--bn-font-weight-heading);
+  text-align: start;
+  white-space: nowrap; /* a header that wraps mid-word is a misread column, and the wrapper exists */
+}
+
+/* The header band is the whole row group, not just `<th>`: a header row written with `<td>` inside a
+   `<thead>` is a markup mistake but a legible one, and it should not come out looking like data. */
+thead :is(th, td) {
+  background: var(--bn-main);
+  color: var(--bn-main-foreground);
+}
+
+/* A row header inside the body keeps the heading weight on the body's surface: it is a label, not a
+   second title band. */
+tbody th,
+tfoot th {
+  font-weight: var(--bn-font-weight-heading);
+}
+
+/* ==============================================================================================
+ * 4. The caption: a title above the frame, on the same start edge as the first column.
+ * ============================================================================================ */
+caption {
+  caption-side: top;
+  padding-block: 0 0.5rem;
+  font-family: var(--bn-font-display);
+  font-weight: var(--bn-font-weight-heading);
+  text-align: start;
+}
+
+/* ==============================================================================================
+ * 5. Row states: repaint only.
+ *
+ *    Both states change a background and nothing else. No rule in this file touches a border width,
+ *    a padding or any other box metric outside section 2, so spec §3 invariant 7 holds here by
+ *    construction: a hovered or selected row cannot reflow the grid.
+ * ============================================================================================ */
+@media (hover: hover) {
+  tbody tr:hover {
+    background: color-mix(in srgb, var(--bn-main) 18%, var(--bn-secondary-background));
+  }
+}
+
+tr.bn-selected {
+  background: color-mix(in srgb, var(--bn-main) 40%, var(--bn-secondary-background));
+}
+
+/* The tint cross-fades, but only where the visitor has accepted motion: with reduced motion the
+   colour is simply there, because the transition is never declared (spec §7). */
+@media (prefers-reduced-motion: no-preference) {
+  tbody tr {
+    transition: background-color var(--_motion);
+  }
+}
+
+/* ==============================================================================================
+ * 6. The scroll container convention.
+ *
+ *    A `<table>` cannot scroll itself (`overflow` does not apply to `display: table`), so the
+ *    horizontal scroll lives on a wrapper, and this is the wrapper the documentation asks for:
+ *    a `figure` that directly contains the table (the semantic option — a captioned table is a
+ *    figure), or a `<div class="bn-table-scroll">` when there is no semantic wrapper to use.
+ *
+ *    The trailing padding is not decoration: an `overflow: auto` box clips its content at the
+ *    padding edge, and the table's hard shadow is painted outside its border box. Giving the
+ *    wrapper exactly the shadow's offset as trailing padding lets the shadow finish inside the
+ *    clip — `--bn-shadow-lift` is the same number the small tier uses for its x/y offset, both
+ *    derived from `--bn-shadow-x` in 01-theme.css, so the two cannot drift apart.
+ * ============================================================================================ */
+figure:has(> table),
+.bn-table-scroll {
+  margin-inline: 0;
+  padding-inline-end: var(--bn-shadow-lift);
+  padding-block-end: var(--bn-shadow-lift);
+  overflow-x: auto;
+}
+
+/* ==============================================================================================
+ * 7. Alignment: `.bn-num` marks a numeric column.
+ *
+ *    On the cells of the column — the header cell and every body cell. A `<col>` cannot carry it:
+ *    a column box inherits nothing into its cells in practice (measured in Chrome, `text-align` on a
+ *    `<col>` has no effect), which is the one place where the "fewest repetitions" instinct is wrong.
+ *    `tabular-nums` is the reason a column of numbers reads as a column even when the digits differ
+ *    in width.
+ * ============================================================================================ */
+:is(th, td).bn-num {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
