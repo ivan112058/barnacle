@@ -23,6 +23,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # `actions/deploy-pages` can only publish to a Pages site that already exists, and creating
+      # one normally means flipping a setting in the repository UI. `enablement: true` lets this
+      # run create it with the workflow's own token (source = GitHub Actions), so the first run
+      # after a fresh clone is self-sufficient; on every later run the call is a no-op.
+      - name: Configure Pages (create the site on the first run)
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
       # Node 26 to match the version the artifacts were built and committed with locally
       # (v26.10.0). If that runtime is ever missing from the runner image, 'lts/*' is the
       # fallback — esbuild output is version-independent, but the artifact bytes are not

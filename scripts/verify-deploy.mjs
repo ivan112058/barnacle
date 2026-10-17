@@ -71,6 +71,8 @@ const WORKFLOW_EXPECTATIONS = [
   { needle: 'workflow_dispatch', why: 'the workflow must be manually dispatchable' },
   { needle: 'actions/upload-pages-artifact@v3', why: 'seite\'s upload action is part of the contract' },
   { needle: 'actions/deploy-pages@v4', why: 'seite\'s deploy action is part of the contract' },
+  { needle: 'actions/configure-pages@v5', why: 'the run must be able to create the Pages site itself' },
+  { needle: 'enablement: true', why: 'Pages is created by the workflow, not by a repository setting' },
   { needle: 'path: dist', why: 'the uploaded artifact must be dist/' },
   { needle: 'contents: read', why: 'permissions: contents: read' },
   { needle: 'pages: write', why: 'permissions: pages: write' },
@@ -293,6 +295,7 @@ await check('the workflow places the build chain before the seite build and uplo
    */
   const order = [
     'actions/checkout@v4',
+    'actions/configure-pages@v5',
     'actions/setup-node@v4',
     'npm ci',
     'npm run build',
