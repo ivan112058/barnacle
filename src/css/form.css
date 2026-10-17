@@ -1,1 +1,181 @@
-/* form.css — filled by tickets 11 and 12 (layer: components) */
+/* form.css — the form controls. Ticket 11 wrote the switch in full; the rest of the file is
+ * ticket 12's, and the section map below is its handoff.
+ * (layer: components, assigned by CSS_MANIFEST in scripts/build.mjs — this file writes no @layer.)
+ *
+ * Section map — who writes what, so the two tickets never collide:
+ *
+ *   1. Switch — `input[role="switch"]` ................... ticket 11, complete in this file
+ *   2. Text-like controls — `input` (text types), `textarea`, `select`
+ *      ........ ticket 12. Scope them so this switch keeps its own box: `input` with
+ *      `role="switch"` must be excluded from every checkbox/radio rule, e.g.
+ *      `:is(input[type="checkbox"], input[type="radio"]):not([role="switch"])`.
+ *   3. `input[type="checkbox"]`, `input[type="radio"]` ... ticket 12
+ *   4. `fieldset`, `legend`, `label` ..................... ticket 12
+ *   5. Validation — `[aria-invalid="true"]`, `:user-invalid` ... ticket 12
+ *
+ * The switch is the one control whose whole appearance is the native `:checked` state: no script,
+ * no `aria-checked` to maintain, no class to toggle (spec §3 invariant 6). Everything below is
+ * driven by the browser's own state, which is also why it keeps working when the library's script
+ * is never loaded.
+ *
+ * Two contracts govern the file, and they are the ones every component in this library keeps.
+ *
+ *   1. The element is the anchor (ADR-0001). A switch *is* a checkbox that announces itself as a
+ *      switch — `input[type="checkbox"][role="switch"]` — so the role attribute is the anchor and
+ *      no `bn-` class is invented for it. Every rule below hangs off that attribute, and nothing
+ *      here dresses a bare `input[type="checkbox"]`, which belongs to ticket 12.
+ *   2. The geometry has one source, and the travel is not exempt (spec §3 invariant 3,
+ *      orchestrator-decisions §4). The thumb slides by `--_switch-travel`, and that value is
+ *      `calc(var(--bn-shadow-x) * 3)` — the same token the thumb's `--bn-shadow-sm` tier is drawn
+ *      from. One number on `:root` moves the object and its shadow together, and the channel is
+ *      sized *from* the travel, so the thumb can never overrun the channel when a theme scales it.
+ *
+ * Not in this file, on purpose: no colour literal (01-theme.css owns every colour), no
+ * `@layer`, and the focus ring is not restated — the base layer already draws it for every
+ * focusable element, with the offset that keeps a thick border from swallowing it (spec §7). A
+ * state rule below may repaint and slide; none may touch a border width, a padding or a size
+ * (spec §3 invariant 7), which is what keeps the switch from reflowing when it is toggled.
+ */
+
+/* ==============================================================================================
+ * 1. Switch — `input[role="switch"]` (ticket 11).
+ *
+ *    The shape is a channel and a thumb. The channel is the input's own box: the structural border
+ *    at `--bn-border-width`, square corners from `--bn-radius` (spec §6.1 — a theme that rounds the
+ *    library rounds this too, and the default is the point), and the page's ground as its surface,
+ *    so an off switch reads as an empty slot rather than as a second button.
+ *
+ *    The four lengths are derived, not chosen:
+ *
+ *      --_switch-h      1.75rem — the track's height. A control's proportion, not an interaction
+ *                       distance, so a relative literal is allowed here (the same rule that lets a
+ *                       padding be `1rem`); it is the only number in this section that is not
+ *                       computed from a token.
+ *      --_switch-gap    the structural border itself, so the gap between the thumb and the channel
+ *                       is the same thickness as the frame that draws it.
+ *      --_switch-travel three shadow offsets. This is the slide, and it is the *same* token the
+ *                       thumb's shadow is drawn from (`--bn-shadow-sm` is half of it): the object
+ *                       moves by the geometry its shadow already describes (spec §3 invariant 3).
+ *      --_switch-thumb  whatever is left inside the channel once the frame, the two gaps and the
+ *                       travel are accounted for.
+ *
+ *    `inline-size` is the height plus the travel, which is what makes the geometry closed: content
+ *    box = 2 × border + 2 × gap + thumb + travel, so the thumb's two gaps swap exactly when the
+ *    checked state spends the travel. Override `--bn-shadow-x` and the channel widens with it — the
+ *    thumb lands the same distance from each end, at any scale.
+ * ============================================================================================ */
+input[role="switch"] {
+  --_switch-h: 1.75rem;
+  --_switch-gap: var(--bn-border-width);
+  --_switch-travel: calc(var(--bn-shadow-x) * 3);
+  --_switch-thumb: calc(var(--_switch-h) - var(--_switch-gap) * 2 - var(--bn-border-width) * 2);
+
+  /* The UA's own checkbox rendering is replaced, so every pixel below is ours. */
+  appearance: none;
+  position: relative;
+  display: inline-block;
+  box-sizing: border-box;
+  flex: none;
+  inline-size: calc(var(--_switch-h) + var(--_switch-travel));
+  block-size: var(--_switch-h);
+  margin: 0;
+  padding: 0;
+  vertical-align: middle;
+
+  /* The box is declared once, here, and no state rule below touches it (spec §3 invariant 7). */
+  border-style: solid;
+  border-width: var(--bn-border-width);
+  border-color: var(--bn-border-color);
+  border-radius: var(--bn-radius);
+
+  background: var(--bn-background);
+  cursor: pointer;
+}
+
+/* The thumb. It is the page's own ink at rest, and it sits in the channel with the same gap on
+   every side, carrying the small shadow tier of a control that rests *on* something rather than
+   floating above it (ADR-0003: the tier is chosen by the object's role, not by taste).
+   `translate: 0` is the state the slide interpolates from; without it a checked switch would jump
+   from no transform at all, and the movement would not read as movement. */
+input[role="switch"]::before {
+  content: "";
+  position: absolute;
+  inset-block-start: var(--_switch-gap);
+  inset-inline-start: var(--_switch-gap);
+  inline-size: var(--_switch-thumb);
+  block-size: var(--_switch-thumb);
+  background: var(--bn-foreground);
+  border-radius: var(--bn-radius);
+  box-shadow: var(--bn-shadow-sm);
+  translate: 0;
+}
+
+/* On. The channel fills with the structural accent and the thumb spends the travel, landing the
+   same gap from the far edge that it had from the near one. The thumb turns to the accent's ink
+   because it now sits on a saturated fill: --bn-main-foreground is black in both themes, which is
+   the one colour that stays legible on a fill that does not change between them (spec §6.2). */
+input[role="switch"]:checked {
+  background: var(--bn-main);
+}
+
+input[role="switch"]:checked::before {
+  translate: var(--_switch-travel);
+  background: var(--bn-main-foreground);
+}
+
+/* Hover, colour only, so a pointer gets an answer without the control moving under it: the empty
+   channel takes a wash of the accent it is about to fill with. Wrapped in (hover: hover) so a touch
+   device cannot stay stuck in the state it got by tapping (decision D). The checked channel is
+   already saturated, so the rule excludes it — there is nothing to warm up. */
+@media (hover: hover) {
+  input[role="switch"]:not(:disabled):not(:checked):hover {
+    background: color-mix(in srgb, var(--bn-main) 30%, var(--bn-background));
+  }
+}
+
+/* Disabled. The control keeps its structure and its readable contrast: only the pointer and the
+   edge come off. No geometry is cancelled anywhere in this file — there is no lift to cancel. */
+input[role="switch"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* The slide and the cross-fade are *declared* only where the visitor accepts motion, so the reduced
+   case is the absence of a rule rather than a rule switching motion off afterwards (spec §7). With
+   reduced motion the switch still toggles and still moves — it simply arrives at once. */
+@media (prefers-reduced-motion: no-preference) {
+  input[role="switch"] {
+    transition: background-color var(--_motion);
+  }
+
+  input[role="switch"]::before {
+    transition:
+      translate var(--_motion),
+      background-color var(--_motion);
+  }
+}
+
+/* ==============================================================================================
+ * 2. Text-like controls — ticket 12 writes this section.
+ *
+ *    `input` (the text, search, email, url, tel, number, date, time and password types),
+ *    `textarea` and `select`. The switch above is excluded by its role attribute, so a rule here
+ *    written as `input:not([type="checkbox"], [type="radio"], …)` is already safe; a rule written
+ *    for checkboxes and radios must carry `:not([role="switch"])`.
+ * ============================================================================================ */
+
+/* ==============================================================================================
+ * 3. checkbox / radio — ticket 12 writes this section.
+ *
+ *    Both are fully redrawn (`appearance: none`) like the switch, and both must be scoped away from
+ *    `[role="switch"]`: the switch is a checkbox in the DOM, and a checkbox rule that reached it
+ *    would fight every declaration in section 1.
+ * ============================================================================================ */
+
+/* ==============================================================================================
+ * 4. fieldset / legend / label — ticket 12 writes this section.
+ * ============================================================================================ */
+
+/* ==============================================================================================
+ * 5. Validation — `[aria-invalid="true"]` / `:user-invalid` — ticket 12 writes this section.
+ * ============================================================================================ */
