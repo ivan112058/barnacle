@@ -4,12 +4,12 @@
 
 **Blocked by:** 08
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] 交互几何（静止阴影、悬停上移与阴影放大、按下落下、焦点环、动效守卫）收敛为单一来源
-- [ ] Button 改用该来源，外观与交互不变
-- [ ] 触发位移与阴影的全部数值都由 `--bn-shadow-x/y` 与 `--bn-press` 派生，无组件内硬编码位移
-- [ ] 组件的悬停规则不再重复书写 translate 与 box-shadow 数值
+- [x] 交互几何（静止阴影、悬停上移与阴影放大、按下落下、焦点环、动效守卫）收敛为单一来源
+- [x] Button 改用该来源，外观与交互不变
+- [x] 触发位移与阴影的全部数值都由 `--bn-shadow-x/y` 与 `--bn-press` 派生，无组件内硬编码位移
+- [x] 组件的悬停规则不再重复书写 translate 与 box-shadow 数值
 
 **验证方式**
 
@@ -101,3 +101,8 @@
 - **未验证 / 与 09 无关的既有红项**：`node tests/browser/mutation-sweep.mjs` 在本票开工**之前就已经是红的**（在 `52a9d2e` 的干净产物上同样报 `mutation "hover-changes-a-border-width": the pattern occurs 2 times in the artifact, expected exactly 1: transform: translate(var(--_lift-x), var(--_lift-y));`）。这是 20 号票把 tabs 的 hover 规则写成与 button 逐字相同的文本造成的，规则要求「不许删改既有断言」，故未动。不在本 ticket 要求的回归清单内；建议单独开一张小票把该变异改成按 `@layer` 块定位。
 - 未跑 `verify-site` 之外的浏览器交互现场（`tests/browser/mutation-sweep.mjs` 之外的变异测试不在本票范围）。
 
+## Resolution
+
+Resolved on the integration branch `feat/barnacle-v1` at commit b8d230f.
+Closing convention: this tracker has no "done" label, so `Status: resolved` plus the ticked checklist above records closure (see `docs/agents/issue-tracker.md`).
+Verify with: `npm run verify:interaction`

@@ -4,15 +4,15 @@
 
 **Blocked by:** 02
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `.github/workflows/deploy.yml` 采用 seite 自带的 GitHub Pages 工作流（`upload-pages-artifact@v3` + `deploy-pages@v4`）
-- [ ] workflow 在 CI 中先跑构建链产出 `static/` 产物，再跑 `seite build`，最后上传 `dist/`
-- [ ] `seite` 在 CI 中按固定版本（0.20.1）获取，与本地版本一致
+- [x] `.github/workflows/deploy.yml` 采用 seite 自带的 GitHub Pages 工作流（`upload-pages-artifact@v3` + `deploy-pages@v4`）
+- [x] workflow 在 CI 中先跑构建链产出 `static/` 产物，再跑 `seite build`，最后上传 `dist/`
+- [x] `seite` 在 CI 中按固定版本（0.20.1）获取，与本地版本一致
 - [ ] GitHub Pages 的 Source 设为 "GitHub Actions"
 - [ ] `https://ivan112058.github.io/barnacle/` 可访问，首页正常渲染
 - [ ] 页面引用的 CSS 与 JS 全部返回 200，无一 404
-- [ ] 部署链路不依赖 `gh` CLI（本机未安装）
+- [x] 部署链路不依赖 `gh` CLI（本机未安装）
 
 **验证方式**
 
@@ -133,3 +133,10 @@
    若希望子路径爬取也进 CI，加一行 `npm run verify:deploy` 即可；代价是 CI 多起一个 HTTP 服务，
    且它需要一个 seite 能跑的容器环境——建议等第一次真实 CI run 站稳后再加。
 
+## Resolution
+
+Resolved on the integration branch `feat/barnacle-v1` at commit b8d230f.
+Closing convention: this tracker has no "done" label, so `Status: resolved` plus the ticked checklist above records closure (see `docs/agents/issue-tracker.md`).
+Verify with: `npm run verify:deploy` (and, once the site is live, `npm run verify:release -- --live`)
+
+**Still unticked, and why**: the three live-deploy items — GitHub Pages' Source set to "GitHub Actions", `https://ivan112058.github.io/barnacle/` reachable, and every CSS/JS the page references answering 200 — stay `- [ ]`. Pages is not enabled for this repository yet, and this machine's git credential has no `workflow` scope, so GitHub rejected the push that carries `.github/workflows/deploy.yml`; the user will enable Pages and push `main` by hand. Once that is done, run `npm run verify:release -- --live` — its currently measured output is `GET https://ivan112058.github.io/barnacle/ → 404`.

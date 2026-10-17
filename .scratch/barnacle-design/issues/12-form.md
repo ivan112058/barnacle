@@ -4,16 +4,16 @@
 
 **Blocked by:** 11
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] 裸 `input` / `select` / `textarea` / `checkbox` / `radio` 呈正确外观，尺寸与排版成体系
-- [ ] `fieldset` / `label` 就位，字段组有可辨的边界与标题层级
-- [ ] 校验状态用 `:user-invalid` 触发（交互后），**不出现**:invalid 导致的初始红框
-- [ ] 校验语义走 `data-variant`，与外观修饰不混用
-- [ ] 校验态**不改变边框宽度**，避免栅格重排
-- [ ] 焦点环对所有控件可见
-- [ ] 实测 `:user-invalid` 在目标浏览器可用；不可用则记录兜底方案并落地
-- [ ] 文档站出现「Form」页，含各类控件与校验态示例
+- [x] 裸 `input` / `select` / `textarea` / `checkbox` / `radio` 呈正确外观，尺寸与排版成体系
+- [x] `fieldset` / `label` 就位，字段组有可辨的边界与标题层级
+- [x] 校验状态用 `:user-invalid` 触发（交互后），**不出现**:invalid 导致的初始红框
+- [x] 校验语义走 `data-variant`，与外观修饰不混用
+- [x] 校验态**不改变边框宽度**，避免栅格重排
+- [x] 焦点环对所有控件可见
+- [x] 实测 `:user-invalid` 在目标浏览器可用；不可用则记录兜底方案并落地
+- [x] 文档站出现「Form」页，含各类控件与校验态示例
 
 **验证方式**
 
@@ -127,3 +127,9 @@
 - RTL：字段用逻辑属性（`padding-inline-end`、`margin-inline`），但 `select` 的雪佛龙用物理 `background-position: right …`，`direction: rtl` 下箭头不会镜像；未实测。
 - `input[type=file|range|color]` 保持原生（本票范围外，未样式化），`::file-selector-button` 未处理。
 - 长文本在 `input` 里是浏览器自身的横向滚动（未自定义滚动条）；多行文本的自动增高（`field-sizing`）未启用。
+
+## Resolution
+
+Resolved on the integration branch `feat/barnacle-v1` at commit b8d230f.
+Closing convention: this tracker has no "done" label, so `Status: resolved` plus the ticked checklist above records closure (see `docs/agents/issue-tracker.md`).
+Verify with: `npm run verify:form`

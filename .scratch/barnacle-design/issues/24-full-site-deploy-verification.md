@@ -4,14 +4,14 @@
 
 **Blocked by:** 23
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] 完整站点在 `https://ivan112058.github.io/barnacle/` 上可访问
 - [ ] 从首页出发，逐链接走通全部页面（中英各一遍），无死角 404
 - [ ] 全部资源（CSS、JS、字体、图片）在子路径下均返回 200
-- [ ] 中英文页面互相切换正确，`hreflang` 情况与 23 号票的实测结论一致
+- [x] 中英文页面互相切换正确，`hreflang` 情况与 23 号票的实测结论一致
 - [ ] 暗色模式在完整站点上逐页成立
-- [ ] `static/` 下的四份产物与当前源码一致（不是过期产物）
+- [x] `static/` 下的四份产物与当前源码一致（不是过期产物）
 - [ ] README 的消费方式（CDN / 原始下载 / 按需组合）逐条实测可用，CDN 链路指向 `main` 分支的 `static/` 路径
 
 **验证方式**
@@ -146,3 +146,10 @@ verify:layout 22/22     verify:release 20/20（2 skip = 仅在线两项）
 6. **线上 404 页（`dist/404.html`、`dist/zh/404.html`）**：文件存在，但中文 404 的正文仍是英文（23 号票已记录，
    seite 内置模板），本票只确认它们被构建出来。
 
+## Resolution
+
+Resolved on the integration branch `feat/barnacle-v1` at commit b8d230f.
+Closing convention: this tracker has no "done" label, so `Status: resolved` plus the ticked checklist above records closure (see `docs/agents/issue-tracker.md`).
+Verify with: `npm run verify:release` (offline) and `npm run verify:release -- --live` (once the site is live)
+
+**Still unticked, and why**: the five live-site items — the complete site reachable at `https://ivan112058.github.io/barnacle/`, every link walked in both languages with no dead 404, every resource answering 200, dark mode per page on the real site, and README's CDN / raw-download links — stay `- [ ]`. Their offline equivalents pass and are recorded in the `## Answer` above (a 46-page crawl served under a local `/barnacle/` sub-path, 0 × 404, dark mode on all 46 pages, and the per-file composition route), but the real URL and the jsDelivr / raw mirrors are not verified yet: Pages is not enabled for this repository and this machine's git credential has no `workflow` scope, so the push of `.github/workflows/deploy.yml` was rejected by GitHub; the user will enable Pages and push `main` by hand. Once that is done, run `npm run verify:release -- --live` — its currently measured output is `GET https://ivan112058.github.io/barnacle/ → 404`.

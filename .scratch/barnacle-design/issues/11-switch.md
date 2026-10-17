@@ -4,14 +4,14 @@
 
 **Blocked by:** 09
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `input[role="switch"]` 呈开关外观，开与关状态视觉上可区分
-- [ ] 无需脚本即可切换（原生控件行为），样式不依赖 JS
-- [ ] 若含滑动部件，其位移与阴影偏移同源派生（§3 不变量 3）
-- [ ] 状态切换**不改变边框宽度**
-- [ ] 键盘操作（Tab 聚焦、Space 切换）与焦点环均可见可用
-- [ ] 文档站出现「Switch」页，示例里开关真的可切
+- [x] `input[role="switch"]` 呈开关外观，开与关状态视觉上可区分
+- [x] 无需脚本即可切换（原生控件行为），样式不依赖 JS
+- [x] 若含滑动部件，其位移与阴影偏移同源派生（§3 不变量 3）
+- [x] 状态切换**不改变边框宽度**
+- [x] 键盘操作（Tab 聚焦、Space 切换）与焦点环均可见可用
+- [x] 文档站出现「Switch」页，示例里开关真的可切
 
 **验证方式**
 
@@ -164,3 +164,8 @@ input[role="switch"]:checked::before {
 - 证伪（红/绿都跑过）：把第 1 节的 `input[role="switch"]::before` 临时改成也命中 `input[type="checkbox"]`，该断言转红（`mark position absolute`）；撤回并重建产物后恢复绿（21/21）。
 
 
+## Resolution
+
+Resolved on the integration branch `feat/barnacle-v1` at commit b8d230f.
+Closing convention: this tracker has no "done" label, so `Status: resolved` plus the ticked checklist above records closure (see `docs/agents/issue-tracker.md`).
+Verify with: `npm run verify:switch`

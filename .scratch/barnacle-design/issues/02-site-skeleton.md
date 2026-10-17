@@ -4,16 +4,16 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `seite.toml` 就位，`base_url` 指向 `https://ivan112058.github.io/barnacle`
-- [ ] 目录骨架：`content/`（Markdown + YAML frontmatter）、`templates/`（Tera）、`static/`、`public/`
-- [ ] `content/_index.md` → `/` 首页，链向 `/components/`
-- [ ] `content/components/_index.md` 作为索引占位页
-- [ ] `templates/base.html` / `index.html` / `page.html`，`templates/components/` 下的 `section.html` 与 `page.html`
-- [ ] 页面以相对路径加载 `static/barnacle.css` 与 `static/barnacle.js`（子路径部署不做绝对根引用）
-- [ ] `static/style.css` 承载文档站自身样式，与库产物严格分开
-- [ ] 本地预览命令写进 README
+- [x] `seite.toml` 就位，`base_url` 指向 `https://ivan112058.github.io/barnacle`
+- [x] 目录骨架：`content/`（Markdown + YAML frontmatter）、`templates/`（Tera）、`static/`、`public/`
+- [x] `content/_index.md` → `/` 首页，链向 `/components/`
+- [x] `content/components/_index.md` 作为索引占位页
+- [x] `templates/base.html` / `index.html` / `page.html`，`templates/components/` 下的 `section.html` 与 `page.html`
+- [x] 页面以相对路径加载 `static/barnacle.css` 与 `static/barnacle.js`（子路径部署不做绝对根引用）
+- [x] `static/style.css` 承载文档站自身样式，与库产物严格分开
+- [x] 本地预览命令写进 README
 
 **脚手架处理**
 
@@ -144,3 +144,8 @@ PASS  seite serve previews the homepage and /components/ on a sub-path-free orig
 6. **minify 决策锁定了 `static/style.css` 也不压缩**。如果 04 号票往 `style.css` 里加很多样式后想压它，需要重新评估：可以改用「seite 之外预先压好 `static/style.min.css`」的路子，而不是打开 `minify = true`。
 7. `verify-site.mjs` 里 `seite init` 的那一项会真在 `%TEMP%` 建一个目录并写 24 个文件（脚本结束会打印路径，可安全删除）；如果以后要跑在无网络/无 temp 权限的环境，加 `--no-init-probe` 之类的开关。
 
+## Resolution
+
+Resolved on the integration branch `feat/barnacle-v1` at commit b8d230f.
+Closing convention: this tracker has no "done" label, so `Status: resolved` plus the ticked checklist above records closure (see `docs/agents/issue-tracker.md`).
+Verify with: `npm run verify:site`

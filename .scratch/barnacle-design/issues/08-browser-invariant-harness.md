@@ -4,19 +4,19 @@
 
 **Blocked by:** 07
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] 验收台能启动本机已安装的 Chrome（`channel: 'chrome'`）——**不下载浏览器二进制**，本机已有 Chrome 与 `ms-playwright` 缓存
-- [ ] 测试在 `http://127.0.0.1:<port>` 上服务页面，**不使用 `file://`**（`file://` 下会有加载假失败）
-- [ ] 覆盖页面与库产物来自真实的构建产物，不手写 CSS 字面量
-- [ ] 断言用 `getComputedStyle` 读取计算值，**不做像素级截图比对**
-- [ ] 断言零 console error、零 page error
-- [ ] 三条防 flaky 约束写进验收台的公共前置步骤并在注释里说明原因：
+- [x] 验收台能启动本机已安装的 Chrome（`channel: 'chrome'`）——**不下载浏览器二进制**，本机已有 Chrome 与 `ms-playwright` 缓存
+- [x] 测试在 `http://127.0.0.1:<port>` 上服务页面，**不使用 `file://`**（`file://` 下会有加载假失败）
+- [x] 覆盖页面与库产物来自真实的构建产物，不手写 CSS 字面量
+- [x] 断言用 `getComputedStyle` 读取计算值，**不做像素级截图比对**
+- [x] 断言零 console error、零 page error
+- [x] 三条防 flaky 约束写进验收台的公共前置步骤并在注释里说明原因：
   - **断言前冻结 `transition` 与 `animation`**——否则读到过渡中间值（实测曾读到 `4.04917px` 而非 `4px`）
   - **焦点断言必须用键盘 Tab 到达，且断言对象必须真可聚焦**——`element.focus()` 不触发 `:focus-visible`；对 `<div>` 断言焦点环是无效测试
   - **`:hover` 后所有读取合并进一次 evaluate**——穿插的 `$eval` 会打断 hover 状态
-- [ ] 验收台在 09 号票的交互契约抽取后**逐条重跑并全部通过**（含真实的 `:hover`，不是只测类名模拟）
-- [ ] 用它复现一次真实失败（临时破坏一条不变量，确认测试变红），证明它不是空跑
+- [x] 验收台在 09 号票的交互契约抽取后**逐条重跑并全部通过**（含真实的 `:hover`，不是只测类名模拟）
+- [x] 用它复现一次真实失败（临时破坏一条不变量，确认测试变红），证明它不是空跑
 
 **已实测可断言的不变量**（探针 27/27 通过，可直接照搬）
 
@@ -190,3 +190,9 @@ npm ci                   → EXIT 0（playwright-core 1.64.1 / esbuild 0.28.2）
 5. **`data-theme="dark"` 必须落在 `<html>`**，且阴影色的派生必须留在 `:root`：把派生搬到组件元素上，`<body>` 上的主题就会把硬阴影翻白（`theme.test.mjs` 两半都钉死）。
 6. **令牌覆盖只认 `:root`**：文档与示例都要写「在 `:root` 覆盖令牌」，包装元素上的覆盖有反向对照断言在盯着。
 7. 改 `static/*` 后必须重新 `npm run build`：验收台测的是产物字节（provenance 用例会核对 CSS 路径、`@layer` 声明顺序与 `window.bn.version`）。
+
+## Resolution
+
+Resolved on the integration branch `feat/barnacle-v1` at commit b8d230f.
+Closing convention: this tracker has no "done" label, so `Status: resolved` plus the ticked checklist above records closure (see `docs/agents/issue-tracker.md`).
+Verify with: `npm run test:browser`

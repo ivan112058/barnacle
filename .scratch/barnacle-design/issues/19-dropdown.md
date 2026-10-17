@@ -4,14 +4,14 @@
 
 **Blocked by:** 18
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `<bn-dropdown>` 基于原生 popover API 打开与关闭
-- [ ] 组件只增强内部已有元素：找不到内部结构时安静退出，不报错（spec §9 约定）
-- [ ] 键盘导航与开关可达，焦点管理正确
-- [ ] 打开与关闭派发 `CustomEvent`，`bubbles: true, composed: true`
-- [ ] 不使用 Shadow DOM
-- [ ] 文档站出现「Dropdown」页，含可运行示例与选项说明
+- [x] `<bn-dropdown>` 基于原生 popover API 打开与关闭
+- [x] 组件只增强内部已有元素：找不到内部结构时安静退出，不报错（spec §9 约定）
+- [x] 键盘导航与开关可达，焦点管理正确
+- [x] 打开与关闭派发 `CustomEvent`，`bubbles: true, composed: true`
+- [x] 不使用 Shadow DOM
+- [x] 文档站出现「Dropdown」页，含可运行示例与选项说明
 
 **测试要求**
 
@@ -166,3 +166,8 @@
 - 双语（`/zh/`）下拉页属 23 号票；截图级视觉回归属 08/24 号票。
 - `dist/` 是构建产物（已 gitignore），本轮 `seite build` 的 dist 留在工作区未提交。
 
+## Resolution
+
+Resolved on the integration branch `feat/barnacle-v1` at commit b8d230f.
+Closing convention: this tracker has no "done" label, so `Status: resolved` plus the ticked checklist above records closure (see `docs/agents/issue-tracker.md`).
+Verify with: `npm run verify:dropdown`

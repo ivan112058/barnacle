@@ -4,15 +4,15 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] 亮色令牌全部定义在 `:root`（结构、阴影偏移与层级、交互位移、颜色、强调色与语义映射、字体、动效）
-- [ ] 暗色令牌只定义在 `[data-theme="dark"]`，**不出现 `prefers-color-scheme`**（ADR-0004）
-- [ ] 三档阴影全部由 `--bn-shadow-x` / `--bn-shadow-y` 经 `calc()` 派生
-- [ ] 公共令牌一律 `--bn-*`，内部变量一律 `--_*`，无第三种命名（ADR-0005），且令牌名全为 ASCII
-- [ ] `data-variant` → `--_variant-color` 的语义变体映射就位（success / warning / danger）
-- [ ] 暗色下中性色与阴影色被重调，强调色保持不变
-- [ ] 覆盖单个 `--bn-shadow-x` 后三档阴影按比例同步变化
+- [x] 亮色令牌全部定义在 `:root`（结构、阴影偏移与层级、交互位移、颜色、强调色与语义映射、字体、动效）
+- [x] 暗色令牌只定义在 `[data-theme="dark"]`，**不出现 `prefers-color-scheme`**（ADR-0004）
+- [x] 三档阴影全部由 `--bn-shadow-x` / `--bn-shadow-y` 经 `calc()` 派生
+- [x] 公共令牌一律 `--bn-*`，内部变量一律 `--_*`，无第三种命名（ADR-0005），且令牌名全为 ASCII
+- [x] `data-variant` → `--_variant-color` 的语义变体映射就位（success / warning / danger）
+- [x] 暗色下中性色与阴影色被重调，强调色保持不变
+- [x] 覆盖单个 `--bn-shadow-x` 后三档阴影按比例同步变化
 
 **为什么拆 `--bn-border-color` 与 `--bn-border-width`**：参考源里 `--border` 一个当简写、一个当颜色，同名不同义极易误用。
 **为什么单列 `--bn-shadow-color`**：默认等于边框色以保住「边框与阴影同色」的招牌观感，但暗色模式与强调色卡片需要独立覆盖它。
@@ -74,3 +74,9 @@
 - `[data-theme="dark"]` 在 `<body>` 落点下的阴影翻白（同上，08 号票需选定落点或推动修 spec）。
 - `colorScheme:'dark'`（OS 偏好）不生效：本票只做了临时抽查，正式断言归 08 号票。
 - 组件层的四态几何（`--_lift-*` / `--_press-*` / `--_shadow-rest/-hover/-press`）尚未存在于产物中，因此「悬停位移 = 阴影增量」目前是在探针自补的 CSS 上验证的，不是产物行为——归 06/07/09 号票。
+
+## Resolution
+
+Resolved on the integration branch `feat/barnacle-v1` at commit b8d230f.
+Closing convention: this tracker has no "done" label, so `Status: resolved` plus the ticked checklist above records closure (see `docs/agents/issue-tracker.md`).
+Verify with: `npm run verify:theme`

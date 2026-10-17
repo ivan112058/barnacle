@@ -4,14 +4,14 @@
 
 **Blocked by:** 09
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `.bn-container` / `.bn-row` / `.bn-col-*` 就位，栅格为 12 列且断点行为明确
-- [ ] 工具类集合有界且被记录（间距、对齐、显隐等），不做大而全
-- [ ] 工具类与视觉修饰类名**不冲突**，命名分层清晰
-- [ ] 文档站自身的 `/components/` 索引页与至少一个组件页改用这套栅格排版，并保持外观不退化
-- [ ] 窄屏下栅格折行行为正确，无横向溢出
-- [ ] 文档站出现「Layout」与「Utilities」页
+- [x] `.bn-container` / `.bn-row` / `.bn-col-*` 就位，栅格为 12 列且断点行为明确
+- [x] 工具类集合有界且被记录（间距、对齐、显隐等），不做大而全
+- [x] 工具类与视觉修饰类名**不冲突**，命名分层清晰
+- [x] 文档站自身的 `/components/` 索引页与至少一个组件页改用这套栅格排版，并保持外观不退化
+- [x] 窄屏下栅格折行行为正确，无横向溢出
+- [x] 文档站出现「Layout」与「Utilities」页
 
 **验证方式**
 
@@ -117,3 +117,8 @@
 - `templates/*` 与 `static/style.css` 的另一半改动权归 23 号票；我这边改动是完整的、可读的，未留半成品。
 - 卡片的元素从 `<ul>/<li>` 换成 `<div>`（栅格项 + `.site-card` 内层），`verify-site` 没有对这些标签做断言；若 23 号票需要列表语义，`.site-card` 的样式与 `.bn-col-4` 都不依赖标签名。
 
+## Resolution
+
+Resolved on the integration branch `feat/barnacle-v1` at commit b8d230f.
+Closing convention: this tracker has no "done" label, so `Status: resolved` plus the ticked checklist above records closure (see `docs/agents/issue-tracker.md`).
+Verify with: `npm run verify:layout`

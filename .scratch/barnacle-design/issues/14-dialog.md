@@ -4,14 +4,14 @@
 
 **Blocked by:** 09
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] 原生 `dialog` 呈正确外观，`::backdrop` 用 `--bn-overlay` 或等价的令牌表达
-- [ ] 入场动画写在 `prefers-reduced-motion: no-preference` 块内
-- [ ] `showModal()` 下焦点行为正常：打开时焦点进入对话框，关闭后回到触发元素
-- [ ] 硬阴影与边框在遮罩之上仍然成立，不被遮罩吞掉
-- [ ] 无脚本时 `<dialog open>` 仍以正确外观呈现
-- [ ] 文档站出现「Dialog」页，含可打开与关闭的示例
+- [x] 原生 `dialog` 呈正确外观，`::backdrop` 用 `--bn-overlay` 或等价的令牌表达
+- [x] 入场动画写在 `prefers-reduced-motion: no-preference` 块内
+- [x] `showModal()` 下焦点行为正常：打开时焦点进入对话框，关闭后回到触发元素
+- [x] 硬阴影与边框在遮罩之上仍然成立，不被遮罩吞掉
+- [x] 无脚本时 `<dialog open>` 仍以正确外观呈现
+- [x] 文档站出现「Dialog」页，含可打开与关闭的示例
 
 **验证方式**
 
@@ -114,3 +114,8 @@
 - `tests/browser/` 没有为本票新增 fixture / 用例：本票的 6 项真 Chrome 断言放在自己的 `verify:dialog` 里（与 10/13/16 的惯例一致），`mutation-sweep` 因此还没有针对 dialog 的 mutant。
 - 站点侧无需修复：`static/style.css` 没有作用于 `dialog` 的裸元素规则，预览面板里显示的就是库外观；`verify:site-shell` 的 20 页实测里 `components/dialog.html` 的页壳也被正确复位（shadow none / border 0 / padding 0）。
 
+## Resolution
+
+Resolved on the integration branch `feat/barnacle-v1` at commit b8d230f.
+Closing convention: this tracker has no "done" label, so `Status: resolved` plus the ticked checklist above records closure (see `docs/agents/issue-tracker.md`).
+Verify with: `npm run verify:dialog`

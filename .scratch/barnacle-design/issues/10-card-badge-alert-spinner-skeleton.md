@@ -4,14 +4,14 @@
 
 **Blocked by:** 09
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] **Card**：裸 `article` 呈卡片外观；含强调色变体，该变体下边框色与阴影色同步，不脱节
-- [ ] **Badge**：`.bn-badge` 就位；无语义元素可用的场合才用类名（ADR-0001）
-- [ ] **Alert**：`[role="alert"]` 就位；语义变体走 `data-variant`，外观不硬编码颜色名
-- [ ] **Spinner**：`[role="status"]` 就位；纯 CSS 动画，且入场动画写在 `no-preference` 块内
-- [ ] **Skeleton**：`[role="status"]` 就位；加载占位在不支持动效的环境下仍然表达「正在加载」
-- [ ] 五个组件**各自一页**，每页一句引导语点名所用语义锚点 + 可运行示例，正文不出现 H2
+- [x] **Card**：裸 `article` 呈卡片外观；含强调色变体，该变体下边框色与阴影色同步，不脱节
+- [x] **Badge**：`.bn-badge` 就位；无语义元素可用的场合才用类名（ADR-0001）
+- [x] **Alert**：`[role="alert"]` 就位；语义变体走 `data-variant`，外观不硬编码颜色名
+- [x] **Spinner**：`[role="status"]` 就位；纯 CSS 动画，且入场动画写在 `no-preference` 块内
+- [x] **Skeleton**：`[role="status"]` 就位；加载占位在不支持动效的环境下仍然表达「正在加载」
+- [x] 五个组件**各自一页**，每页一句引导语点名所用语义锚点 + 可运行示例，正文不出现 H2
 
 **验证方式**
 
@@ -102,3 +102,8 @@ article:is([data-variant="success"], [data-variant="warning"], [data-variant="da
 
 - **更正（code review 后追加，`## Answer` 正文按「只追加不改写」保留原措辞）**：「逐条验证方式」第 1 条写的 `node .scratch/shots.mjs`（临时脚本，未提交）与事实相反。`.scratch/shots.mjs` **是提交进仓库的**（`git ls-files .scratch` 可查，随 ticket 10 一并入库）；它是一次性用途，但源码留着，任何人可以重跑重新出图。**没有提交的是它的输出目录** `.scratch/shots/` —— 那 10 张 PNG 属于生成物，不进仓库，因此本条与「偏离说明」第 3 条引用的 `.scratch/shots/components-*.png` 只在跑过脚本的机器上存在。
 
+## Resolution
+
+Resolved on the integration branch `feat/barnacle-v1` at commit b8d230f.
+Closing convention: this tracker has no "done" label, so `Status: resolved` plus the ticked checklist above records closure (see `docs/agents/issue-tracker.md`).
+Verify with: `npm run verify:static`

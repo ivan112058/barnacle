@@ -4,14 +4,14 @@
 
 **Blocked by:** 18
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `<bn-tabs>` 用 `role=tablist` / `role=tab` / `role=tabpanel` 语义工作
-- [ ] 键盘导航完整：方向键在标签间移动、Home / End 到首尾，选中态与焦点态可辨（roving tabindex）
-- [ ] 切换标签派发 `CustomEvent`，detail 至少含索引与被选中的标签，且 `bubbles: true, composed: true`
-- [ ] 无脚本时全部面板可见或全部可读，不出现内容丢失（§3 不变量 6）
-- [ ] 不使用 Shadow DOM
-- [ ] 文档站出现「Tabs」页，含可运行示例与选项说明
+- [x] `<bn-tabs>` 用 `role=tablist` / `role=tab` / `role=tabpanel` 语义工作
+- [x] 键盘导航完整：方向键在标签间移动、Home / End 到首尾，选中态与焦点态可辨（roving tabindex）
+- [x] 切换标签派发 `CustomEvent`，detail 至少含索引与被选中的标签，且 `bubbles: true, composed: true`
+- [x] 无脚本时全部面板可见或全部可读，不出现内容丢失（§3 不变量 6）
+- [x] 不使用 Shadow DOM
+- [x] 文档站出现「Tabs」页，含可运行示例与选项说明
 
 **测试要求**
 
@@ -181,3 +181,8 @@ DOM stub 沿用 18 号票手法：文件顶部装 `HTMLElement`/`CustomEvent`/`c
 6. 面板 `tabindex` 由作者决定（文档页示例照 APG 建议自己写 `tabindex="0"`）；元素本身不写，未测「面板内无可聚焦元素时键盘能否滚动面板」。
 7. 视觉/反事实探针都是**一次性脚本与截图，跑完已删除、未提交**（结论已抄进本 Answer 与 `verify-tabs.mjs` 的断言）；常驻验收台是本票的 `scripts/verify-tabs.mjs`（`npm run verify:tabs`）。
 
+## Resolution
+
+Resolved on the integration branch `feat/barnacle-v1` at commit b8d230f.
+Closing convention: this tracker has no "done" label, so `Status: resolved` plus the ticked checklist above records closure (see `docs/agents/issue-tracker.md`).
+Verify with: `npm run verify:tabs`

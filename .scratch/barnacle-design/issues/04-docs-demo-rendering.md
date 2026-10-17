@@ -4,13 +4,13 @@
 
 **Blocked by:** 02
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] Markdown 中的代码围栏被渲染层改造成双标签界面：预览面板注入真实 HTML 并在页面样式作用域内生效，代码面板显示原文且正确转义
-- [ ] 内容文件里**不出现任何新语法**：作者只写标准代码围栏
-- [ ] 组件页正文**不出现 H2**（H2 由组件索引模板供给）
-- [ ] 导航栏有主题开关，切换时设置 `data-theme="dark"` / `data-theme="light"` 并在刷新后保持
-- [ ] 主题开关不依赖库的 JS（无脚本时页面仍可读）
+- [x] Markdown 中的代码围栏被渲染层改造成双标签界面：预览面板注入真实 HTML 并在页面样式作用域内生效，代码面板显示原文且正确转义
+- [x] 内容文件里**不出现任何新语法**：作者只写标准代码围栏
+- [x] 组件页正文**不出现 H2**（H2 由组件索引模板供给）
+- [x] 导航栏有主题开关，切换时设置 `data-theme="dark"` / `data-theme="light"` 并在刷新后保持
+- [x] 主题开关不依赖库的 JS（无脚本时页面仍可读）
 
 **验证方式**
 
@@ -123,3 +123,8 @@ node scripts/verify-demo.mjs  → 19/19 checks passed
 3. 未在移动宽度/触屏下实测双标签（`@media (hover: hover)` 一类的取舍不在本票范围）。
 4. 未在真实 GitHub Pages 上验证（子路径正确性在本地 `/barnacle/` 挂载 + 绝对 URL 回填下已验证，真机部署归 03/24 号票）。
 
+## Resolution
+
+Resolved on the integration branch `feat/barnacle-v1` at commit b8d230f.
+Closing convention: this tracker has no "done" label, so `Status: resolved` plus the ticked checklist above records closure (see `docs/agents/issue-tracker.md`).
+Verify with: `npm run verify:demo`

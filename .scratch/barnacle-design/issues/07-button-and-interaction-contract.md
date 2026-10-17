@@ -4,17 +4,17 @@
 
 **Blocked by:** 06
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] 裸 `button` 与 `a` 呈按钮外观；`.button` 类名保留给无语义锚点的场合（ADR-0001）
-- [ ] 交互几何完整：静止用中档阴影、悬停按 `--bn-shadow-lift` 上移并放大阴影、按下朝阴影方向落下且阴影收拢
-- [ ] 焦点用 `outline` + `outline-offset` 实现，画在硬阴影之外（ADR-0003）；**绝不出现 `outline: none` 而无替代**
-- [ ] `prefers-reduced-motion: no-preference` 块内限定动效，事后禁用不算
-- [ ] 语义变体走 `data-variant`，视觉修饰走 `bn-` 类名（描边 / 幽灵 / 尺寸 / 禁用），两者不混用
-- [ ] 悬停只改边框颜色，**绝不改边框宽度**
-- [ ] 按钮组就位
-- [ ] 无脚本时外观完整，仅失去交互
-- [ ] 文档站出现「Button」页，含可运行示例与 `data-variant` 选项说明
+- [x] 裸 `button` 与 `a` 呈按钮外观；`.button` 类名保留给无语义锚点的场合（ADR-0001）
+- [x] 交互几何完整：静止用中档阴影、悬停按 `--bn-shadow-lift` 上移并放大阴影、按下朝阴影方向落下且阴影收拢
+- [x] 焦点用 `outline` + `outline-offset` 实现，画在硬阴影之外（ADR-0003）；**绝不出现 `outline: none` 而无替代**
+- [x] `prefers-reduced-motion: no-preference` 块内限定动效，事后禁用不算
+- [x] 语义变体走 `data-variant`，视觉修饰走 `bn-` 类名（描边 / 幽灵 / 尺寸 / 禁用），两者不混用
+- [x] 悬停只改边框颜色，**绝不改边框宽度**
+- [x] 按钮组就位
+- [x] 无脚本时外观完整，仅失去交互
+- [x] 文档站出现「Button」页，含可运行示例与 `data-variant` 选项说明
 
 **验证方式**
 
@@ -93,3 +93,8 @@
 - 没有视觉/像素级截图回归（只有计算样式与 `.bn-icon`、按钮组的 bounding box 读数）；没有断言 `.bn-icon` 内 `svg` 的实际渲染尺寸。
 - `tests/browser/` 验收台与 `playwright-core` 入 `package.json` 仍是 08 号票职责；本票的脚本在未安装 `playwright-core` 时会把这 11 项标 SKIP 并让静态断言继续把守 exit code（本次运行 **0 skipped**，浏览器 11 项全部真跑）。
 
+## Resolution
+
+Resolved on the integration branch `feat/barnacle-v1` at commit b8d230f.
+Closing convention: this tracker has no "done" label, so `Status: resolved` plus the ticked checklist above records closure (see `docs/agents/issue-tracker.md`).
+Verify with: `npm run verify:button`

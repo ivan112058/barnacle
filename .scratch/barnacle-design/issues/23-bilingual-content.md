@@ -4,16 +4,16 @@
 
 **Blocked by:** 02, 04, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] 英文内容在 `/`，中文内容在 `/zh/`
-- [ ] 顶层页双语：首页、使用方式、自定义主题
-- [ ] `/components/` 索引与**全部组件页**双语
-- [ ] 代码块、类名、属性名、令牌名不翻译
-- [ ] 中文页与英文页**共用同一份示例源码**，不维护两份 HTML
-- [ ] 每一页顶部有语言切换器，且切换后停留在对应页面
-- [ ] 英文页的 `<html lang="en">` 与中文页的 `lang="zh"` 正确
-- [ ] 实测 seite 的双语文件命名约定与是否为双语自动生成 `hreflang`（spec §14 待验证事项 3），结果记入文档
+- [x] 英文内容在 `/`，中文内容在 `/zh/`
+- [x] 顶层页双语：首页、使用方式、自定义主题
+- [x] `/components/` 索引与**全部组件页**双语
+- [x] 代码块、类名、属性名、令牌名不翻译
+- [x] 中文页与英文页**共用同一份示例源码**，不维护两份 HTML
+- [x] 每一页顶部有语言切换器，且切换后停留在对应页面
+- [x] 英文页的 `<html lang="en">` 与中文页的 `lang="zh"` 正确
+- [x] 实测 seite 的双语文件命名约定与是否为双语自动生成 `hreflang`（spec §14 待验证事项 3），结果记入文档
 
 **验证方式**
 
@@ -201,3 +201,8 @@ verify:dropdown 17/17（见「未验证 / 风险」第 5 条：一次运行的�
 | 围栏是唯一信号 | 否 | 围栏逐字节相同，`site.js` 的判定与英文页完全一致（实测中文页同样 2 组双标签） |
 | `static/*` 字节不变 | 否 | 生成器不碰 `static/`；`minify = false` 无需改动 |
 
+## Resolution
+
+Resolved on the integration branch `feat/barnacle-v1` at commit b8d230f.
+Closing convention: this tracker has no "done" label, so `Status: resolved` plus the ticked checklist above records closure (see `docs/agents/issue-tracker.md`).
+Verify with: `npm run verify:i18n` and `npm run i18n:check`

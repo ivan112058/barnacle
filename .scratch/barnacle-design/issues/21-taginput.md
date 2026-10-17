@@ -4,15 +4,15 @@
 
 **Blocked by:** 18, 12
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `<bn-taginput>` 支持输入添加、逐项删除与退格删除
-- [ ] 标签的视觉形态与 12 号票的 Form 样式同源，不另起一套
-- [ ] 提供受控的读写接口（读当前标签、写标签集合）
-- [ ] 变更派发 `CustomEvent`，`bubbles: true, composed: true`
-- [ ] 键盘可完整操作，焦点环可见；删除标签不改变容器边框宽度
-- [ ] 不使用 Shadow DOM（ADR-0002）
-- [ ] 文档站出现「TagInput」页，含可运行示例与选项说明
+- [x] `<bn-taginput>` 支持输入添加、逐项删除与退格删除
+- [x] 标签的视觉形态与 12 号票的 Form 样式同源，不另起一套
+- [x] 提供受控的读写接口（读当前标签、写标签集合）
+- [x] 变更派发 `CustomEvent`，`bubbles: true, composed: true`
+- [x] 键盘可完整操作，焦点环可见；删除标签不改变容器边框宽度
+- [x] 不使用 Shadow DOM（ADR-0002）
+- [x] 文档站出现「TagInput」页，含可运行示例与选项说明
 
 **测试要求**
 
@@ -194,3 +194,8 @@ detail = { tags: string[], added: string[], removed: string[], source: 'input' |
 5. **标签重排 / 拖拽**未实现（不在 ticket 范围内）。
 6. 连接前的 API 写入（`setTags` 在 `init()` 之前调用）在 node stub 里覆盖了“没有输入框”的分支，但没有在浏览器里测过“未连接元素先写、连接后渲染”。
 
+## Resolution
+
+Resolved on the integration branch `feat/barnacle-v1` at commit b8d230f.
+Closing convention: this tracker has no "done" label, so `Status: resolved` plus the ticked checklist above records closure (see `docs/agents/issue-tracker.md`).
+Verify with: `npm run verify:taginput`

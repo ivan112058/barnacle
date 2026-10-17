@@ -4,14 +4,14 @@
 
 **Blocked by:** 09
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] 裸 `progress` 与 `meter` 共用同一套槽与填充样式，不各写一份
-- [ ] `progress` 的不确定态（无 `value`）有可辨的呈现
-- [ ] 语义变体走 `data-variant`，与强调色令牌挂钩
-- [ ] 填充的动画受 `prefers-reduced-motion` 守卫
-- [ ] 无脚本时两者均以正确外观呈现
-- [ ] 文档站出现「Progress / Meter」页，同页覆盖两个元素与各自变体
+- [x] 裸 `progress` 与 `meter` 共用同一套槽与填充样式，不各写一份
+- [x] `progress` 的不确定态（无 `value`）有可辨的呈现
+- [x] 语义变体走 `data-variant`，与强调色令牌挂钩
+- [x] 填充的动画受 `prefers-reduced-motion` 守卫
+- [x] 无脚本时两者均以正确外观呈现
+- [x] 文档站出现「Progress / Meter」页，同页覆盖两个元素与各自变体
 
 **验证方式**
 
@@ -75,3 +75,9 @@
 2. **不确定态斜纹爬行的实际视觉位移**未逐帧比对；已断言的是动画确实被声明并在运行（`getAnimations()`=1、`animation-name` 非 `none`），以及在 `reduce` 下为 0。
 3. **`meter` 在无值时的呈现**：实测为空白轨道（Chrome 155 的 `meter` 不匹配 `:indeterminate`），本 ticket 未给它额外外观——若验收要求「无值 meter 也要可辨」，需另开一条并先确认浏览器行为。
 4. 文档页的预览/代码双标签（`static/site.js`）在浏览器里的实际改造结果未逐页目视，只断言了构建产物「0 个作者 H2 + 原始围栏 + 两个元素齐备」，以及 `verify:demo` 的既有断言全绿。
+
+## Resolution
+
+Resolved on the integration branch `feat/barnacle-v1` at commit b8d230f.
+Closing convention: this tracker has no "done" label, so `Status: resolved` plus the ticked checklist above records closure (see `docs/agents/issue-tracker.md`).
+Verify with: `npm run verify:progress`

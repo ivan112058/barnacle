@@ -4,14 +4,14 @@
 
 **Blocked by:** 09
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] 裸 `table` / `thead` / `tbody` / `th` / `td` 呈正确外观，边框不重叠双线
-- [ ] 表头与表体视觉层级可辨，不靠降低对比度实现
-- [ ] 窄屏下表格整体可横向滚动，不撑破页面布局
-- [ ] 数字与文本列的对齐规则明确且可预期
-- [ ] 焦点与选中态（若实现）不改变边框宽度
-- [ ] 文档站出现「Table」页
+- [x] 裸 `table` / `thead` / `tbody` / `th` / `td` 呈正确外观，边框不重叠双线
+- [x] 表头与表体视觉层级可辨，不靠降低对比度实现
+- [x] 窄屏下表格整体可横向滚动，不撑破页面布局
+- [x] 数字与文本列的对齐规则明确且可预期
+- [x] 焦点与选中态（若实现）不改变边框宽度
+- [x] 文档站出现「Table」页
 
 **验证方式**
 
@@ -113,3 +113,9 @@
 - `npm run test:browser:mutations`（08 的变异扫描）未跑（不在本票回归清单内）；本票自己的 mutation 验证是手工做的一次（见 §8）。
 - `tfoot` 写在 `tbody` **之前**（树序在前、渲染在后）的表格未测；`rowspan`/`colspan` 的表格未测（单向边框在跨行/跨列的缝上未验证）。
 - RTL 未实测（边框与对齐都用了逻辑属性，但只跑了 `lang="en"`）。
+
+## Resolution
+
+Resolved on the integration branch `feat/barnacle-v1` at commit b8d230f.
+Closing convention: this tracker has no "done" label, so `Status: resolved` plus the ticked checklist above records closure (see `docs/agents/issue-tracker.md`).
+Verify with: `npm run verify:table`

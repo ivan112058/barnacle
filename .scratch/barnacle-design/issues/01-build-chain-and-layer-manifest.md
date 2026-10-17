@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] `scripts/build.mjs` 用显式清单声明 `src/css/*.css` 的拼接顺序，顺序即层顺序，并作为公共契约（ADR-0006）记录在案
 - [x] 拼接产物写入 `static/barnacle.css`，再由 esbuild `--minify` 产出 `static/barnacle.min.css`
@@ -103,3 +103,8 @@ barnacle.min.css raw line count: 2
 6. **npm 12 的 `allowScripts` 默认拦截安装脚本**：ticket 08 若要引入 playwright / puppeteer 这类带 `postinstall` 的浏览器验收工具，`npm install` 会拦下它们的安装脚本，需要显式 approve（`npm install-scripts approve <pkg>`）或加 `.npmrc` 放行；本 ticket 的 esbuild 不受影响。
 7. `animations.css` 的占位注释没有指名 owner（ticket 09 的动效守卫、14 的 `::backdrop`、10 的 spinner keyframes 都可能写它）；其余占位的 owner 标注来自各 ticket 标题（`form.css` 标了 11+12，因为 switch 寄居 form.css）。若与实际分工不符，只需改那一行注释，不影响构建。
 
+## Resolution
+
+Resolved on the integration branch `feat/barnacle-v1` at commit b8d230f.
+Closing convention: this tracker has no "done" label, so `Status: resolved` plus the ticked checklist above records closure (see `docs/agents/issue-tracker.md`).
+Verify with: `npm run verify`

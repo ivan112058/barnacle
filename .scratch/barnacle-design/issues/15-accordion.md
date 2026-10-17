@@ -4,13 +4,13 @@
 
 **Blocked by:** 09
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] 原生 `details` / `summary` 呈正确外观，收起与展开两态都可辨
-- [ ] 展开指示器的旋转或位移与 `--bn-shadow-x/y` 同源派生（§3 不变量 3）
-- [ ] 无需脚本即可开合；键盘（Enter / Space）与焦点环均可用
-- [ ] 开合**不改变边框宽度**，不引起栅格重排
-- [ ] 文档站出现「Accordion」页，含多面板与嵌套示例中的至少一种
+- [x] 原生 `details` / `summary` 呈正确外观，收起与展开两态都可辨
+- [x] 展开指示器的旋转或位移与 `--bn-shadow-x/y` 同源派生（§3 不变量 3）
+- [x] 无需脚本即可开合；键盘（Enter / Space）与焦点环均可用
+- [x] 开合**不改变边框宽度**，不引起栅格重排
+- [x] 文档站出现「Accordion」页，含多面板与嵌套示例中的至少一种
 
 **验证方式**
 
@@ -120,3 +120,9 @@ details[open] > summary::after {                  /* 展开：位移 + 旋转 + 
 - 面板内含宽 `table` / 长代码块时的横向行为未测（外层仍可用 `figure` / `.bn-table-scroll`，但没有针对面板内的实测）。
 - RTL 未实测（用的是逻辑属性 `border-block-start` / `padding-inline`）。
 - `details[open]` 的开合动画在 `prefers-reduced-motion: reduce` 下是「无过渡」而不是「更快的过渡」——这是设计选择，没有做视觉回归截图对比。
+
+## Resolution
+
+Resolved on the integration branch `feat/barnacle-v1` at commit b8d230f.
+Closing convention: this tracker has no "done" label, so `Status: resolved` plus the ticked checklist above records closure (see `docs/agents/issue-tracker.md`).
+Verify with: `npm run verify:accordion`

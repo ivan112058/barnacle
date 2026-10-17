@@ -4,14 +4,14 @@
 
 **Blocked by:** 05
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `00-base.css` 第 1 行是 `@layer` 声明，层顺序与 01 号票的层清单一致（ADR-0006）
-- [ ] 裸 `h1`–`h6`、`p`、`ul`/`ol`、`blockquote`、`code`、`pre`、`hr`、`mark` 直接呈现正确排版与外观
-- [ ] `body` 拿到背景色、前景色、字体族与字重
-- [ ] 样式不依赖 JS：无脚本时外观完整正确（§3 不变量 6）
-- [ ] 未压缩产物中无 `!important`
-- [ ] 文档站出现「Typography」页，用一个代码围栏展示全部裸元素
+- [x] `00-base.css` 第 1 行是 `@layer` 声明，层顺序与 01 号票的层清单一致（ADR-0006）
+- [x] 裸 `h1`–`h6`、`p`、`ul`/`ol`、`blockquote`、`code`、`pre`、`hr`、`mark` 直接呈现正确排版与外观
+- [x] `body` 拿到背景色、前景色、字体族与字重
+- [x] 样式不依赖 JS：无脚本时外观完整正确（§3 不变量 6）
+- [x] 未压缩产物中无 `!important`
+- [x] 文档站出现「Typography」页，用一个代码围栏展示全部裸元素
 
 **验证方式**
 
@@ -128,3 +128,8 @@
 - 07 号票落地后需要复核：`--_lift-*` / `--_shadow-*` / `--_focus-ring` 在真实组件上的 computed 值（本票只验证了 `:root` 槽位本身的派生与浏览器读取值）。
 - 09 号票的收敛审计应把「base 层是唯一声明 `--_` 数值的地方」作为回归依据；本票的 `the geometry block is the only --_ declaration site in the base layer` 与 `no geometry property in the base layer carries a numeric literal` 两条断言就是这条不变量的现成检查。
 
+## Resolution
+
+Resolved on the integration branch `feat/barnacle-v1` at commit b8d230f.
+Closing convention: this tracker has no "done" label, so `Status: resolved` plus the ticked checklist above records closure (see `docs/agents/issue-tracker.md`).
+Verify with: `npm run verify:base`

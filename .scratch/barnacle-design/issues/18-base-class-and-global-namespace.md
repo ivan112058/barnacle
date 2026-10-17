@@ -4,16 +4,16 @@
 
 **Blocked by:** 06
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `BnBase` 提供生命周期、`handleEvent` 分发、键盘导航、事件派发与 id 生成
-- [ ] 事件一律 `CustomEvent` 且 `bubbles: true, composed: true`（spec §9）
-- [ ] **只用浅 DOM**，不用 Shadow DOM（ADR-0002）；组件是对内部原生元素的增强而非替代
-- [ ] 初始化在 DOM ready 后一次性完成，**可重复调用不重复绑定**
-- [ ] `window.bn` 面窄且被测试钉死，内部实现不泄漏到全局
-- [ ] 只有「有内部状态与生命周期」的能力才做成自定义元素；无状态能力留作普通模块
-- [ ] 禁止跟随系统的暗色模式等库级约定不被 JS 绕过
-- [ ] `src/js/index.js` 完成自定义元素注册与 `window.bn` 挂载
+- [x] `BnBase` 提供生命周期、`handleEvent` 分发、键盘导航、事件派发与 id 生成
+- [x] 事件一律 `CustomEvent` 且 `bubbles: true, composed: true`（spec §9）
+- [x] **只用浅 DOM**，不用 Shadow DOM（ADR-0002）；组件是对内部原生元素的增强而非替代
+- [x] 初始化在 DOM ready 后一次性完成，**可重复调用不重复绑定**
+- [x] `window.bn` 面窄且被测试钉死，内部实现不泄漏到全局
+- [x] 只有「有内部状态与生命周期」的能力才做成自定义元素；无状态能力留作普通模块
+- [x] 禁止跟随系统的暗色模式等库级约定不被 JS 绕过
+- [x] `src/js/index.js` 完成自定义元素注册与 `window.bn` 挂载
 
 **测试要求**
 
@@ -153,3 +153,8 @@ window.bn = { version: '0.1.0', register(name, ctor) }
 5. `window.bn` 上保留了不可枚举的 `installed` 标记；若 22 号票要求零多余属性，改用模块私有 `WeakSet` 即可，不改变对外行为。
 6. `verify-base.mjs` 与本票无关（06 号票的脚本），本票未改；35/35 是靠 merge `feat/barnacle-v1` 拿到的。
 
+## Resolution
+
+Resolved on the integration branch `feat/barnacle-v1` at commit b8d230f.
+Closing convention: this tracker has no "done" label, so `Status: resolved` plus the ticked checklist above records closure (see `docs/agents/issue-tracker.md`).
+Verify with: `npm test`

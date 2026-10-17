@@ -4,15 +4,15 @@
 
 **Blocked by:** 18
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `bn.toast()` / `bn.toast.el()` / `bn.toast.clear()` 三个入口就位
-- [ ] Toast 是普通模块，**不做成自定义元素**（spec §9 约定）
-- [ ] 自动消失时长可配置；被动消失不阻断用户输入
-- [ ] 容器层级与定位不遮挡页面上其他可交互元素
-- [ ] 入场与退场动画写在 `prefers-reduced-motion: no-preference` 块内
-- [ ] 文档站出现「Toast」页，示例里可手动触发
-- [ ] 对照 spec §9 逐项核对 `window.bn` 的最终形状——只暴露声明过的能力，无多余出口
+- [x] `bn.toast()` / `bn.toast.el()` / `bn.toast.clear()` 三个入口就位
+- [x] Toast 是普通模块，**不做成自定义元素**（spec §9 约定）
+- [x] 自动消失时长可配置；被动消失不阻断用户输入
+- [x] 容器层级与定位不遮挡页面上其他可交互元素
+- [x] 入场与退场动画写在 `prefers-reduced-motion: no-preference` 块内
+- [x] 文档站出现「Toast」页，示例里可手动触发
+- [x] 对照 spec §9 逐项核对 `window.bn` 的最终形状——只暴露声明过的能力，无多余出口
 
 **测试要求**
 
@@ -176,3 +176,8 @@ window.bn = { version: '0.1.0', register(name, ctor), toast(message, options) }
 5. 「改 `:root` 的 `--bn-press` 后 toast 位移随之缩放」只有代码层推理，没有覆盖令牌后的位移实测。
 6. 无关闭按钮 / 无 `info` 变体 / 无动作按钮：spec 未要求，未实现（见偏离 1，不是遗漏）。
 
+## Resolution
+
+Resolved on the integration branch `feat/barnacle-v1` at commit b8d230f.
+Closing convention: this tracker has no "done" label, so `Status: resolved` plus the ticked checklist above records closure (see `docs/agents/issue-tracker.md`).
+Verify with: `npm run verify:toast`
