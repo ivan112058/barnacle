@@ -2078,9 +2078,273 @@ bn-tabs [role="tabpanel"] > :last-child {
 }
 /* src/css/layout.css (@layer components) */
 @layer components {
-/* layout.css — filled by ticket 17 (layer: components) */
+/*
+ * layout.css — Layout (spec §8: `.bn-container` / `.bn-row` / `.bn-col-*`, no semantic element
+ * available), emitted into @layer components by scripts/build.mjs.
+ *
+ * Implementation choice: **CSS grid on the row, one custom property per column class.**
+ *
+ * The alternative was a flex row whose column classes carry `inline-size: percentage(...)`
+ * (`--_span` × 100 / 12). Grid wins on three counts that matter here:
+ *
+ *   1. the gutters are a single `gap`, so a column never has to subtract its own share of the
+ *      gutter out of a percentage — the arithmetic that makes hand-rolled flex grids drift by a
+ *      fraction of a pixel from row to row is simply absent;
+ *   2. a column can be *forced* to shrink below its content (`minmax(0, 1fr)` + `min-inline-size: 0`),
+ *      which is exactly what a long unbreakable token in a documentation page needs;
+ *   3. `.bn-col-<n>` carries no rule body at all — it writes `--_span: n` and the single family
+ *      rule consumes it. Adding a breakpoint later is one media query, not twelve more rules.
+ *
+ * The consequence to know about: `--_span` **inherits**. A `.bn-row` nested inside a column
+ * therefore resets it back to the full twelve columns — without that reset, a row inside a
+ * `.bn-col-4` would lay its own children out across the parent's four columns.
+ */
+
+:root {
+  /*
+   * Layout parameters are internal (--_), not public API (ADR-0005): they are not part of the
+   * theme, and nothing in spec §6.1 declares them. A site narrows `.bn-container` by setting
+   * `--_container-max` on the container itself — the docs site does exactly that (see
+   * static/style.css), which is also why the used value is readable from `.bn-container`.
+   */
+  --_grid-columns: 12;
+  --_grid-gap: 1.5rem;
+  --_container-max: 75rem;
+  --_container-pad: 2rem;
+}
+
+/*
+ * The container. It centres a readable column and nothing else — no background, no border, no
+ * shadow, because Layout is a measurement, not a look.
+ *
+ * `box-sizing: border-box` is declared here rather than assumed. The library ships no `*` reset
+ * (a `*` rule would be a public contract nobody asked for), so without this line a container with
+ * `inline-size: 100%` and `2rem` of padding is `2rem` wider than its parent on each side — the
+ * classic content-box surprise, and a horizontal scrollbar on any page that uses a container at
+ * the top level.
+ */
+.bn-container {
+  box-sizing: border-box;
+  inline-size: 100%;
+  max-inline-size: var(--_container-max);
+  margin-inline: auto;
+  padding-inline: var(--_container-pad);
+}
+
+/*
+ * The row is a 12-track grid. `minmax(0, 1fr)` rather than `1fr` is deliberate: a plain `1fr`
+ * track floors at its content's min-content width, so one long word would widen the whole row
+ * past the container and produce a horizontal scrollbar on the page.
+ *
+ * `--_span` is reset here so a nested row starts from a clean twelve columns instead of
+ * inheriting the parent column's span.
+ */
+.bn-row {
+  --_span: var(--_grid-columns);
+  display: grid;
+  grid-template-columns: repeat(var(--_grid-columns), minmax(0, 1fr));
+  gap: var(--_grid-gap);
+  min-inline-size: 0;
+}
+
+/*
+ * The column family. Every `.bn-col-<n>` class below writes only `--_span`; the span is read
+ * back here once. `min()` keeps a stray `--_span: 14` from overflowing the grid instead of
+ * wrapping.
+ *
+ * The containment declaration is what makes "no horizontal overflow" true rather than hoped for,
+ * and it was measured. A grid item's automatic minimum size is content-based, so a column holding
+ * one unbreakable token (a URL, a 40-character identifier) still reports that token's width as its
+ * minimum and widens the whole document — `min-inline-size: 0` does not remove it, because the
+ * item's min-content contribution is still that token.
+ *
+ * `contain: paint` does remove it. The obvious candidate, `overflow: clip`, also works but is a
+ * leftover trap: `overflow` inherits into a nested `.bn-row`, and a clipped grid cannot lay out its
+ * own children (they collapse into one track). `contain: paint` clips without touching `overflow`
+ * at all, so a row nested inside a column keeps working. Measured at 320px with a 40-character
+ * token: without containment the document is 666px wide, with either one it is 320px, and the
+ * nested row's cells stay at 148/148px either way.
+ *
+ * What it costs, stated plainly: a column clips content painted outside its own box (a wide table
+ * or an unbreakable word is cut off rather than pushing the page sideways). Breaking the text
+ * instead — `overflow-wrap: anywhere` on the text — remains the author's call; a layout file
+ * should not set every element's line-breaking for it.
+ *
+ * `--_col-max` is opt-in and empty by default: a page that wants a measure narrower than its column
+ * writes `--_col-max: 46rem` on the column and keeps the full twelve-column grid around it.
+ */
+:is(.bn-col-1, .bn-col-2, .bn-col-3, .bn-col-4, .bn-col-5, .bn-col-6,
+    .bn-col-7, .bn-col-8, .bn-col-9, .bn-col-10, .bn-col-11, .bn-col-12) {
+  --_span: var(--_grid-columns);
+  grid-column: span min(var(--_span), var(--_grid-columns));
+  max-inline-size: var(--_col-max, none);
+  margin-inline: 0;
+  min-inline-size: 0;
+  contain: paint;
+}
+
+.bn-col-1  { --_span: 1; }
+.bn-col-2  { --_span: 2; }
+.bn-col-3  { --_span: 3; }
+.bn-col-4  { --_span: 4; }
+.bn-col-5  { --_span: 5; }
+.bn-col-6  { --_span: 6; }
+.bn-col-7  { --_span: 7; }
+.bn-col-8  { --_span: 8; }
+.bn-col-9  { --_span: 9; }
+.bn-col-10 { --_span: 10; }
+.bn-col-11 { --_span: 11; }
+.bn-col-12 { --_span: 12; }
+
+/*
+ * The breakpoint. Below 768px every column becomes the full row, whatever class it carries, so a
+ * page is readable on a phone without a second class name — `bn-col-md-6` and its combinatorial
+ * explosion are deliberately not part of this library, because the utility set is meant to stay
+ * finite.
+ *
+ * `768px` is written as pixels and not `48rem`, matching the four viewports the docs page names
+ * (320 / 375 / 768 / 1024 / 1440). The two spellings are the same width at the default root size
+ * — a media query resolves `rem` against the initial 16px, never against a page's own font size
+ * — and the stylesheet says so where a reader will look for it.
+ *
+ * Above the breakpoint a `.bn-col-6` is half the row and two of them share a line; below it they
+ * stack. Nothing in between: 12 columns × one breakpoint is the whole vocabulary.
+ */
+@media (max-width: 768px) {
+  :is(.bn-col-1, .bn-col-2, .bn-col-3, .bn-col-4, .bn-col-5, .bn-col-6,
+      .bn-col-7, .bn-col-8, .bn-col-9, .bn-col-10, .bn-col-11, .bn-col-12) {
+    --_span: var(--_grid-columns);
+  }
+}
+
+/*
+ * Note for whoever tightens `--_grid-gap`: the gap must stay wider than the largest hard shadow
+ * offset (`--bn-shadow-lg`, 6px at the default 4px base), or a card's shadow lands on its
+ * neighbour. `1.5rem` leaves 18px of slack.
+ */
 }
 /* src/css/utilities.css (@layer utilities) */
 @layer utilities {
-/* utilities.css — filled by ticket 17 (layer: utilities) */
+/*
+ * utilities.css — Utilities (spec §8: "有界工具类集合"), emitted into @layer utilities by
+ * scripts/build.mjs.
+ *
+ * The layer is the whole point of this file: `utilities` is last in ADR-0006's order, so a
+ * utility always wins over a component or a base rule inside the library — `.bn-list-none` can
+ * beat `ul { list-style: square }` without an important flag and without a specificity argument.
+ * Outside the library the ADR still holds in the user's favour: unlayered CSS wins over every
+ * layer, so a visitor overrides any of these by doing nothing at all.
+ *
+ * **Bounded on purpose.** Twenty classes, five groups, and not a single important flag in the
+ * file — the layer already provides the override, so one would only be a second, competing
+ * mechanism. The boundary is:
+ *
+ *   - no numeric axis beyond `2 / 4 / 8 / 16` (`0.5rem / 1rem / 2rem / 4rem`): spacing is a
+ *     scale, not a random-access set of pixel counts;
+ *   - no responsive prefixes (`.bn-md-*` and friends). A page that needs a breakpoint uses
+ *     `.bn-row` + `.bn-col-*` (layout.css) or its own media query, which wins anyway;
+ *   - no colour, no border, no shadow. Those are visual modifiers (`.bn-outline`, `.bn-ghost`,
+ *     `.bn-sm`, `.bn-lg`, `.bn-attached`, `.bn-icon`) and sharing their namespace would mean a
+ *     utility could silently redefine a component's shape.
+ */
+
+/* ---------------------------------------------- text alignment ------------------------ */
+
+.bn-text-start  { text-align: start; }
+.bn-text-center { text-align: center; }
+.bn-text-end    { text-align: end; }
+
+/*
+ * The one accessibility utility. Unlike `display: none` or `visibility: hidden` the content
+ * stays in the accessibility tree *and* stays focusable, which is what an off-screen label, a
+ * skip link mid-transition, or the text of an icon-only control needs.
+ */
+.bn-visually-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ------------------------------------------- layout combinations --------------------- */
+
+/*
+ * Four fixed combinations of the layout primitives. Each one is a single decision ("stack",
+ * "wrap and centre", "centre inside", "push apart") rather than a property-per-class system.
+ */
+.bn-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--_stack-gap, 1rem);
+}
+
+.bn-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--_stack-gap, 0.75rem);
+}
+
+.bn-center {
+  display: grid;
+  place-items: center;
+}
+
+.bn-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--_stack-gap, 0.75rem);
+}
+
+/* ----------------------------------------------------------- block spacing ----------- */
+
+/*
+ * Four steps in two directions. `margin-block-*` rather than `margin-top` / `margin-bottom`:
+ * one rule then covers right-to-left and vertical writing modes alike.
+ */
+.bn-mt-2  { margin-block-start: 0.5rem; }
+.bn-mt-4  { margin-block-start: 1rem; }
+.bn-mt-8  { margin-block-start: 2rem; }
+.bn-mt-16 { margin-block-start: 4rem; }
+.bn-mb-2  { margin-block-end: 0.5rem; }
+.bn-mb-4  { margin-block-end: 1rem; }
+.bn-mb-8  { margin-block-end: 2rem; }
+.bn-mb-16 { margin-block-end: 4rem; }
+
+/* --------------------------------------------------------------- sizing and text ----- */
+
+.bn-w-full { inline-size: 100%; }
+
+/*
+ * One line, ellipsis at the end. `min-inline-size: 0` is what allows it to work inside a flex or
+ * grid item, whose automatic minimum size would otherwise be the full text width.
+ */
+.bn-truncate {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+ * `.bn-list-none` resets the marker *and* the start padding, because a list with no marker keeps
+ * an invented indent otherwise. It is also the clearest demonstration that the utilities layer
+ * wins over base: `00-base.css` sets `ul { list-style: square }`.
+ */
+.bn-list-none {
+  list-style: none;
+  padding-inline-start: 0;
+}
+
+/*
+ * De-emphasised text derived from `--bn-foreground` rather than a literal grey, so it flips with
+ * the theme instead of disappearing on a dark background.
+ */
+.bn-text-muted { color: color-mix(in srgb, var(--bn-foreground) 60%, transparent); }
 }

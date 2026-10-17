@@ -19,8 +19,16 @@
   --site-grid: rgba(17, 17, 17, 0.05);
   --site-line: 3px;
   --site-gap: 1.5rem;
-  --site-pad: clamp(1rem, 4vw, 3rem);
+  /*
+   * The same value serves two jobs: the inline padding of the header, main and footer, and —
+   * through the container's `--_container-pad` slot — the padding inside the library's grid
+   * container. The clamp keeps the gutter proportionate at both ends of the range instead of a
+   * fixed 2rem that eats a quarter of a 320px screen.
+   */
+  --site-pad: clamp(1rem, 4vw, 2rem);
   --site-width: 62rem;
+  /* The readable measure for prose, expressed once: .site-prose and .site-lede share it. */
+  --site-prose-measure: 46rem;
   --site-radius: 0;
 }
 
@@ -190,6 +198,14 @@ html:not([data-site-js]) [data-site-theme-toggle] {
 
 .site-main {
   padding-block: 2.5rem 4rem;
+  /*
+   * This element also carries the library's grid container class (templates/base.html). The grid
+   * defaults to 75rem / 2rem; the docs site passes its own values through the container's internal
+   * slots instead of overriding the library, so the index, the page titles and the header all
+   * share one column width and one gutter (ticket 17).
+   */
+  --_container-max: var(--site-width);
+  --_container-pad: var(--site-pad);
 }
 
 .site-footer {
@@ -253,12 +269,54 @@ html:not([data-site-js]) [data-site-theme-toggle] {
   box-shadow: none;
 }
 
+/*
+ * The library's buttons are deliberately single-line (`white-space: nowrap`), so a demo button
+ * whose label is longer than the preview panel is wide would stick out of the panel — and, at a
+ * phone width, out of the page. The demo is the site's own presentation of that markup, so the
+ * site loosens it here rather than the library loosening its own control: nothing outside a
+ * preview panel changes, and the button's own box metrics at a wider viewport are untouched.
+ *
+ * The attribute selector is how this reaches the library's opt-in button shape without writing a
+ * library class name into the docs-site stylesheet — the site's namespace stays clear of the
+ * library's, which is what scripts/verify-site.mjs asserts.
+ */
+.site-demo__panel--preview :is(button, [class~="bn-button"]) {
+  max-inline-size: 100%;
+  white-space: normal;
+}
+
+/*
+ * Below the library's own grid breakpoint (768px, layout.css) a code fence that is wider than the
+ * page would otherwise take the whole document with it: `overflow-x: auto` on the `pre` gives the
+ * block its own scrollbar, but a `white-space: pre` line still sets the *intrinsic* width of every
+ * ancestor. Wrapping the line keeps the page inside the viewport; the code panel of a Preview/Code
+ * pair is a child of the preview panel, not of `.site-prose`, so it keeps its own scrollbar.
+ */
+@media (max-width: 768px) {
+  .site-prose pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+}
+
 .site-demo__panel--code pre {
   margin: 0;
 }
 
+/*
+ * The prose measure. `.site-prose` is inside a full-width grid column, so its readable width is
+ * its own decision: `--site-prose-measure` is the single source for it, and the head blocks on a
+ * page use the same value so the lede lines up with the body text.
+ */
 .site-prose {
-  max-width: 46rem;
+  max-width: var(--site-prose-measure);
+  /*
+   * Documentation prose is full of long unbreakable words — a shadow token name, a
+   * `document.documentElement.scrollWidth` selector. `anywhere` rather than `break-word` because
+   * only `anywhere` also reduces the element's min-content width, which is the part that keeps a
+   * narrow viewport from being pushed sideways by a sentence.
+   */
+  overflow-wrap: anywhere;
 }
 
 .site-prose > :first-child {
@@ -335,7 +393,7 @@ html:not([data-site-js]) [data-site-theme-toggle] {
 }
 
 .site-lede {
-  max-width: 46rem;
+  max-width: var(--site-prose-measure);
   margin-top: 0;
   font-size: 1.125rem;
   color: var(--site-muted);
@@ -365,6 +423,13 @@ html:not([data-site-js]) [data-site-theme-toggle] {
   padding-bottom: 0.25rem;
 }
 
+/*
+ * The site's own card grid is kept for standalone use, but it is no longer what lays the card
+ * collections out: the library's grid classes do that on every page now (ticket 17). The two are
+ * composed as nested elements rather than as two classes on one element, because this rule sets
+ * `grid-template-columns` and unlayered CSS beats every cascade layer — putting both on the same
+ * element would silently replace the library's twelve tracks with this auto-fill grid.
+ */
 .site-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
@@ -374,15 +439,28 @@ html:not([data-site-js]) [data-site-theme-toggle] {
   list-style: none;
 }
 
+/*
+ * A card fills its column and its link fills the card. The grid columns already stretch their
+ * items, so the card only has to pass that height on to the link, which is what keeps
+ * equal-height cards in a row — the same reading as before the grid took over.
+ */
 .site-card {
   display: flex;
+  block-size: 100%;
+  /*
+   * `min-inline-size: 0` rather than an intrinsic minimum. A flex container's automatic minimum
+   * size is its content's, so without this the card reports the widest unbreakable thing inside
+   * it (a long description token) as its minimum and a three-across grid silently becomes two
+   * across. The grid track is the width contract; the card just fills it.
+   */
+  min-inline-size: 0;
 }
 
 .site-card__link {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  width: 100%;
+  inline-size: 100%;
   padding: 1rem;
   background: var(--site-surface);
   border: var(--site-line) solid var(--site-ink);
@@ -403,6 +481,13 @@ html:not([data-site-js]) [data-site-theme-toggle] {
 .site-card__desc {
   color: var(--site-muted);
   font-size: 0.9375rem;
+  /*
+   * A card sits in a four-column grid track, so at a phone width its text has to survive a very
+   * narrow line: a single unbreakable token in a description — a shadow token name, a long
+   * selector — would otherwise set the *intrinsic* width of the whole grid and push the page
+   * sideways.
+   */
+  overflow-wrap: anywhere;
 }
 
 /* ---------------------------------------------------------------- component --------- */

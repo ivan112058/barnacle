@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<!--
+  Layout / utilities fixture (ticket 17).
+
+  Markup only: every style comes from the published artifact, which the harness mounts at
+  /barnacle/static/barnacle.css. The page exists to make the grid's *computed* behaviour
+  observable — ask it how many tracks the row has, not what the stylesheet said.
+
+  The fixture is deliberately hostile to the grid in the two ways that actually break one:
+  a long unbroken token inside a column (which a `minmax(0, 1fr)` track must be able to
+  squeeze) and a nested row inside a column (which must reset the inherited span).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Layout fixture</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/barnacle/static/barnacle.css">
+<style>body { margin: 0; }</style>
+</head>
+<body>
+<div class="bn-container" id="container">
+  <div class="bn-row" id="row">
+    <div class="bn-col-6" id="left" data-cell="left">
+      <span id="left-content">left cell</span>
+    </div>
+    <div class="bn-col-6" id="right" data-cell="right">
+      <span id="right-content">right cell</span>
+    </div>
+
+    <div class="bn-col-12" id="full" data-cell="full">full row</div>
+
+    <div class="bn-col-4" id="third-a" data-cell="third-a">a third</div>
+    <div class="bn-col-4" id="third-b" data-cell="third-b">a third</div>
+    <div class="bn-col-4" id="third-c" data-cell="third-c">a third</div>
+
+    <div class="bn-col-3" id="quarter" data-cell="quarter">a quarter</div>
+
+    <div class="bn-col-12" id="nested-host" data-cell="nested-host">
+      <div class="bn-row" id="nested-row">
+        <div class="bn-col-6" id="nested-left" data-cell="nested-left">nested left</div>
+        <div class="bn-col-6" id="nested-right" data-cell="nested-right">nested right</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- The containment case, in its own row so it cannot disturb the geometry above: one column
+       holding a token no line-break rule can split. The column must clip it, not widen the page. -->
+  <div class="bn-row" id="containment-row">
+    <div class="bn-col-4" id="wide-content" data-cell="wide-content">
+      <span id="wide-content-text">barnaclegridcolumnspansneveroverflowtheviewportorexpandtherow</span>
+    </div>
+  </div>
+</div>
+
+<div id="utilities-probe">
+  <ul id="list-none" class="bn-list-none">
+    <li>one</li>
+    <li>two</li>
+  </ul>
+  <ul id="plain-list">
+    <li>one</li>
+  </ul>
+  <p id="muted" class="bn-text-muted">muted</p>
+  <p id="plain" >plain</p>
+  <p id="centered" class="bn-text-center">centered</p>
+  <div id="between" class="bn-between"><span>a</span><span>b</span></div>
+  <div id="stack" class="bn-stack"><span>a</span><span>b</span></div>
+  <span id="hidden" class="bn-visually-hidden">screen readers only</span>
+</div>
+</body>
+</html>

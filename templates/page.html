@@ -1,9 +1,16 @@
 {% extends "base.html" %}
 {% block title %}{{ page.title }} — {{ site.title }}{% endblock %}
 {% block content %}
+{# The plain pages consume the same grid, so the site has one layout vocabulary (ticket 17). #}
 <article class="site-page">
-  <h1 class="site-page__title">{{ page.title }}</h1>
-  {% if page.description %}<p class="site-lede">{{ page.description }}</p>{% endif %}
-  <div class="site-prose">{{ page.content | safe }}</div>
+  <div class="bn-row">
+    <div class="bn-col-12" data-site-column="head">
+      <h1 class="site-page__title">{{ page.title }}</h1>
+      {% if page.description %}<p class="site-lede">{{ page.description }}</p>{% endif %}
+    </div>
+    <div class="bn-col-12" data-site-column="body">
+      <div class="site-prose">{{ page.content | safe }}</div>
+    </div>
+  </div>
 </article>
 {% endblock %}

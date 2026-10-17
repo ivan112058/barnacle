@@ -2,25 +2,39 @@
 {% block title %}{{ site.title }} — a semantic-first Neubrutalism CSS library{% endblock %}
 {% block content %}
 {% set base = site.base_url ~ lang_prefix %}
-<div class="site-prose site-home">
-  {{ page.content | safe }}
+{#
+  The homepage consumes the grid as well (ticket 17): the intro and every collection heading are
+  full-width columns, and each collection's cards are four-column blocks — the same rhythm as
+  /components/. `.site-grid` is the docs site's own hook, kept on its own element; putting it on
+  the row would override the library's twelve tracks, because unlayered CSS beats every layer.
+#}
+<div class="bn-row">
+  <div class="bn-col-12" data-site-column="intro">
+    <div class="site-prose site-home">
+      {{ page.content | safe }}
+    </div>
+  </div>
 </div>
 
 {% for collection in collections %}
 {% if collection.items | length > 0 %}
-<section class="site-collection" aria-labelledby="collection-{{ collection.name }}">
-  <h2 id="collection-{{ collection.name }}">{{ collection.label }}</h2>
-  <ul class="site-grid">
-    {% for item in collection.items %}
-    <li class="site-card">
+<div class="bn-row">
+  <div class="bn-col-12" data-site-column="collection-head">
+    <section class="site-collection" aria-labelledby="collection-{{ collection.name }}">
+      <h2 id="collection-{{ collection.name }}">{{ collection.label }}</h2>
+    </section>
+  </div>
+  {% for item in collection.items %}
+  <div class="bn-col-4" data-site-column="card">
+    <div class="site-card">
       <a class="site-card__link" href="{{ base }}{{ item.url }}">
         <span class="site-card__title">{{ item.title }}</span>
         {% if item.description %}<span class="site-card__desc">{{ item.description }}</span>{% endif %}
       </a>
-    </li>
-    {% endfor %}
-  </ul>
-</section>
+    </div>
+  </div>
+  {% endfor %}
+</div>
 {% endif %}
 {% endfor %}
 {% endblock %}
