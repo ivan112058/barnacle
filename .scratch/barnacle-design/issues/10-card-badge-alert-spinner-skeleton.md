@@ -92,3 +92,8 @@ article:is([data-variant="success"], [data-variant="warning"], [data-variant="da
 2. **卡片不做交互抬升**（recipe 提议的 `.bn-interactive` 未实现）：强调色卡的悬停档（lg）同样需要就地重derive 一次 `calc(var(--bn-shadow-x) * 1.5)`，那才是真正的「第二份几何声明」；且 spec §8 的 Card 行只要求颜色变体。已在 `card.css` 头部与 `card.md` 写明「卡片不位移」。
 3. **文档站 `article` 碰撞（需别的票一行修复，我未改不属于本票的文件）**：`templates/{component,page}.html` 用 `<article class="site-component">` / `site-page` 包整页，`static/style.css` 里没有对应规则，于是整页被当作卡片上框。按决策 §11，裸元素不受「ARIA 角色需加作用域前缀」约束（那正是语义优先的本意），而修复应落在 02 号票的 `static/style.css`：`.site-component, .site-page { border: 0; box-shadow: none; padding: 0 }`。证据截图 `.scratch/shots/components-card-light.png`。
 4. **未验证**：真机触屏（`@media (hover: hover)` 的触屏分支只靠 Playwright 桌面 Chrome 默认匹配验证）；Firefox / Safari（本仓只装 `playwright-core` + 系统 Chrome 155）；`.bn-visually-hidden`（尚未落地，故 spinner 的可访问名走 `aria-label`）；`spinner.md` 里「reduce 下停走但仍可辨」只有脚本断言 + 截图，未做读屏实测。
+
+### 提交
+
+- `b906979` Add Card, Badge, Alert, Spinner and Skeleton with their pages (ticket 10) —— 五个 CSS 文件、五个文档页、`scripts/verify-static.mjs`、`package.json`（`verify:static`）、重建后的四份 `static/` 产物。
+- `1b7c31e` Record ticket 10 verification evidence in the issue (ticket 10) —— 本 `## Answer`。
