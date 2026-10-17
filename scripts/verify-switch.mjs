@@ -1103,11 +1103,51 @@ const BROWSER_CHECKS = [
           before.contentWidth === after.contentWidth && before.inlineSize === after.inlineSize,
           `the content box changed on toggle: ${before.contentWidth} → ${after.contentWidth}`,
         );
-        // A plain checkbox on the same page keeps the browser's own widget: the role is the anchor,
-        // and nothing else is dressed by this file.
+        // A plain checkbox used to be the negative control's whole point: back then nothing dressed
+        // it, so "appearance is still the browser's" proved the switch had not leaked. Ticket 12's
+        // form.css now dresses it as a box, so the control keeps its *meaning* instead of its old
+        // wording: the role is still the switch's anchor, and none of the switch's geometry reaches
+        // a plain checkbox. A plain checkbox is a 20×20 box whose ::before is the centred mark — a
+        // static, shadowless part — while the switch is 40×28 and its ::before is an absolutely
+        // positioned 16px thumb on the sm tier.
         const plain = await readStyles(page, '#plain', ['appearance']);
-        must(plain.appearance === 'auto' || plain.appearance === 'checkbox', `a plain checkbox must stay native, read appearance ${plain.appearance}`);
-        return `borders ${before.borderTopWidth}/${before.borderLeftWidth}/${before.borderRightWidth}/${before.borderBottomWidth} on and off; box ${before.boxWidth}×${before.boxHeight} unchanged; an unroled checkbox stays ${plain.appearance}`;
+        must(
+          plain.appearance === 'none',
+          `a plain checkbox must be redrawn by the form section, read appearance ${plain.appearance}`,
+        );
+        const plainBox = await readSwitch(page, '#plain');
+        must(
+          plainBox.boxWidth === 20 && plainBox.boxHeight === 20,
+          `a plain checkbox is a 20×20 box, read ${plainBox.boxWidth}×${plainBox.boxHeight}`,
+        );
+        must(
+          plainBox.boxWidth !== before.boxWidth && plainBox.boxHeight !== before.boxHeight,
+          `the switch's box leaked onto a plain checkbox: ${plainBox.boxWidth}×${plainBox.boxHeight} vs the switch's ` +
+            `${before.boxWidth}×${before.boxHeight} — the role is the anchor`,
+        );
+        // The mark itself is read from the pseudo-element's computed style. Its `inlineSize` is not
+        // usable here — Chrome reports 0 for a grid item that is a pseudo-element of a replaced
+        // element, even though the mark paints — so the shape is read from what the switch owns:
+        // the thumb is absolutely positioned and carries the sm tier, the mark is neither.
+        const plainMark = await page.evaluate(() => {
+          const mark = getComputedStyle(document.querySelector('#plain'), '::before');
+          return { position: mark.position, boxShadow: mark.boxShadow };
+        });
+        must(
+          plainMark.position === 'static' && before.thumb.gap === SWITCH.gap,
+          `a plain checkbox's ::before must be its mark, not the switch's absolutely positioned thumb ` +
+            `(mark position ${plainMark.position}, the switch's thumb inset ${before.thumb.gap}px)`,
+        );
+        must(
+          plainMark.boxShadow === 'none',
+          `the switch thumb's tier leaked onto a plain checkbox's mark, read ${plainMark.boxShadow} ` +
+            `(the switch's thumb reads ${before.thumb.boxShadow})`,
+        );
+        must(
+          before.thumb.boxShadow !== 'none' && plainBox.cursor === 'pointer',
+          'the switch thumb still carries its tier and the box still advertises itself — the reads above measure something',
+        );
+        return `borders ${before.borderTopWidth}/${before.borderLeftWidth}/${before.borderRightWidth}/${before.borderBottomWidth} on and off; box ${before.boxWidth}×${before.boxHeight} unchanged; a plain checkbox is a ${plainBox.boxWidth}×${plainBox.boxHeight} box (${plain.appearance}) with a ${plainMark.position} mark and ${plainMark.boxShadow}`;
       }),
   ],
   [
