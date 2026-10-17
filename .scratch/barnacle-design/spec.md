@@ -379,3 +379,24 @@ scripts/build.mjs
 - **库内打包字体**（§6.3）
 - **npm 发布**（v1 阶段，§12）
 - **`gh-pages` 分支部署**（§12）
+
+## 16. 实施记录（v1 实测偏差）
+
+本节是 v1 收尾时的实测回填，只追加结论，不改动上文任何既有判断。标题原定 `## 15`，但 §15 已被「明确不做」占用，故顺延为 §16，避免同一份 spec 里出现两个 §15。
+
+### §14 六个待验证事项的结论
+
+1. **能，但只能在索引模板里循环集合**：集合索引由 `templates/components-index.html` 渲染，模板里可直接用的是扁平的 `items`；首页（`templates/index.html`）用的是 `collections[].items`。模板名必须是 `templates/<collection>-index.html`，写错就退回通用 `templates/index.html`。依据：ticket 02 + `npm run verify:site` 的「templates/components-index.html won over templates/index.html」。
+2. **模板必须自己拼 `{{ site.base_url }}` + `lang_prefix`**：`page.url` / `item.url` 已带语言前缀、但不带子路径，所以模板写 `{{ site.base_url }}{{ item.url }}`；Markdown 正文里的站内链接可写无前缀的 `/...`，seite 会补。依据：ticket 02/23 + `templates/component.html` 的双前缀注释，实测 `verify:release` 抓到的 46 页全部 200、0 个越界引用、0 个非 canonical 链接。
+3. **`hreflang` 只在 sitemap 里自动生成**：页面 `<head>` 一条都不生成；sitemap 会为每条有译文的 URL 写 en/zh 交替，但 `x-default` 只出现在首页那一对条目上。所以 `<head>` 的三条交替在 `templates/_i18n_hreflang.html` 里手写。依据：ticket 23 实测 + `npm run verify:i18n`（16/16，含「非首页条目 x-default 计数」）。
+4. **`minify = true` 会二次压缩**：`verify:site --minify-experiment` 实测 `barnacle.min.css` 34057B → 33840B、`barnacle.min.js` 15811B → 15810B（尾换行被吃掉），四个产物全部 REWRITTEN；`minify = false` 时四个产物 IDENTICAL。故定案 `minify = false`。依据：ticket 02 实测。
+5. **围栏不需要短代码**：seite 的短代码拿不到页面正文与 `data/`，而 Tera 在正文里不展开（`{% include %}` 原样输出）。所以「围栏 → Preview/Code」由客户端站点脚本 `static/site.js` 完成，`.md` 里的围栏原样保留、中英逐字节相同。依据：ticket 04/23 + `npm run verify:demo`（19/19）、`verify:i18n` 的围栏一致性检查。
+6. **`seite init` 写 24 个文件，只采纳 `.seite/config.json`**：9 个 `.claude/rules/*`、4 个 `.claude/skills/*`、`AGENTS.md`、`CLAUDE.md`、`.mcp.json`、`.gitignore`、`templates/{base,index,page}.html`、`seite.toml`、`.github/workflows/deploy.yml` 一律不采纳；其中 `seite.toml` 与 `deploy.yml` 按本仓需要手写。依据：ticket 02 + `verify:site` 打印的 24 文件清单与 `.seite/config.json` 版本比对。
+
+### 其他实测偏差
+
+- **§4 目录布局**：`content/` 下多了 `pages/` 子目录（`/`、`/usage`、`/customizing`）；组件集合的索引模板是 `templates/components-index.html`、组件页模板是 `templates/component.html`，并没有 `templates/components/{section,page}.html`。依据：ticket 02 实测。
+- **§5 关键帧归属**：`animations.css` 只承担 `::backdrop` 与 dialog/toast 共享的入场；`bn-spin`、`bn-shimmer`、`bn-progress-crawl` 等散在 `spinner/skeleton/progress/toast/dialog` 各自的文件里。依据：ticket 10/14/16/22 实测。
+- **§7「所有可交互组件共用同一套几何」的实际收窄**：表单控件的 hover 只升阴影档（sm → md）、**不位移**——「正在输入却在光标下移动的文本框」是可用性错误；徽标、卡片、提示条则完全不参与位移。依据：ticket 12 的结论 + `verify:form` / `verify:static` 的状态规则断言。
+- **§12「资源引用必须相对化」的实际做法**：不是相对化，而是模板统一拼 `{{ site.base_url }}` 的绝对 URL（子路径在构建期就固定为 `/barnacle/`），实测子路径下每个引用 200、无越界。依据：ticket 03 + `npm run verify:deploy`（12/12，`/barnacle/` 挂载下的全量抓取）。
+- **`progress.css` 的层归属**：在 `CSS_MANIFEST` 里是 `components` 而不是 `base`——它按组件实现，不是基础层的元素默认样式。依据：ticket 16 + `scripts/build.mjs` 的 `CSS_MANIFEST`。

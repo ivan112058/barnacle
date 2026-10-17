@@ -97,3 +97,8 @@ article:is([data-variant="success"], [data-variant="warning"], [data-variant="da
 
 - `b906979` Add Card, Badge, Alert, Spinner and Skeleton with their pages (ticket 10) —— 五个 CSS 文件、五个文档页、`scripts/verify-static.mjs`、`package.json`（`verify:static`）、重建后的四份 `static/` 产物。
 - `1b7c31e` Record ticket 10 verification evidence in the issue (ticket 10) —— 本 `## Answer`。
+
+## Comments
+
+- **更正（code review 后追加，`## Answer` 正文按「只追加不改写」保留原措辞）**：「逐条验证方式」第 1 条写的 `node .scratch/shots.mjs`（临时脚本，未提交）与事实相反。`.scratch/shots.mjs` **是提交进仓库的**（`git ls-files .scratch` 可查，随 ticket 10 一并入库）；它是一次性用途，但源码留着，任何人可以重跑重新出图。**没有提交的是它的输出目录** `.scratch/shots/` —— 那 10 张 PNG 属于生成物，不进仓库，因此本条与「偏离说明」第 3 条引用的 `.scratch/shots/components-*.png` 只在跑过脚本的机器上存在。
+
