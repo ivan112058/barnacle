@@ -126,16 +126,18 @@ function prepareSource(entry) {
   return { rel, layer: entry.layer, css: body.join('\n').replace(/\s+$/, '') };
 }
 
+/**
+ * The exact text of one file's block, marker comment included. `concatenateLayerBlocks` joins
+ * these; verification reads them one at a time, so an audit can measure one source file without
+ * re-implementing the build chain (ticket 09's `verify-interaction.mjs` does exactly that).
+ */
+export function layerBlock(source) {
+  return [`/* ${source.rel} (@layer ${source.layer}) */`, `@layer ${source.layer} {`, source.css, '}'].join('\n');
+}
+
 /** Concatenates the layer blocks only — the declaration is handled separately. */
 export function concatenateLayerBlocks(sources) {
-  const parts = [];
-  for (const source of sources) {
-    parts.push(`/* ${source.rel} (@layer ${source.layer}) */`);
-    parts.push(`@layer ${source.layer} {`);
-    parts.push(source.css);
-    parts.push('}');
-  }
-  return `${parts.join('\n')}\n`;
+  return `${sources.map(layerBlock).join('\n')}\n`;
 }
 
 /** The unminified artifact: line 1 is always the declaration. */
