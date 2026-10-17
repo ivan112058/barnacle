@@ -27,6 +27,8 @@
     "verify:table": "node scripts/verify-table.mjs",
     "verify:switch": "node scripts/verify-switch.mjs",
     "verify:form": "node scripts/verify-form.mjs",
+    "verify:dialog": "node scripts/verify-dialog.mjs",
+    "verify:accordion": "node scripts/verify-accordion.mjs",
     "verify:layout": "node scripts/verify-layout.mjs"
   },
   "dependencies": {},
