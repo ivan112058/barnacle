@@ -1,0 +1,22 @@
+<!doctype html>
+<!--
+  The theme switch on <body> — the case orchestrator-decisions §8 pins down: `[data-theme="dark"]`
+  matches the body, so the page colours *do* switch, but `--bn-shadow-md` and `--bn-border-color`
+  were already substituted with the light-theme strings on :root and are inherited as finished
+  strings. The hard shadow therefore stays black on a dark page. Ticket 08 asserts exactly that,
+  so the semantics cannot drift into "somewhere on an ancestor".
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="data:," />
+    <title>barnacle browser harness — data-theme on body</title>
+    <link rel="stylesheet" href="/barnacle/static/barnacle.css" />
+  </head>
+  <body data-theme="dark">
+    <main>
+      <h1>Dark on &lt;body&gt;</h1>
+      <button id="bare" type="button">Press me</button>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!-- A missing favicon makes Chrome log a 404 console.error, which would fail the
+         "zero console errors" assertion with noise instead of a finding. -->
+    <link rel="icon" href="data:," />
+    <title>barnacle browser harness — buttons</title>
+    <!-- The published artifact, served from the site's subpath. No style is written in this
+         file: a hand-written copy of a declaration would be measured instead of the product. -->
+    <link rel="stylesheet" href="/barnacle/static/barnacle.css" />
+    <script defer src="/barnacle/static/barnacle.js"></script>
+  </head>
+  <body>
+    <main>
+      <h1>Buttons</h1>
+
+      <!-- The bare element is the anchor (ADR-0001) and the first focusable thing on the page,
+           so one keyboard Tab reaches it. The wrapper exists for the negative control in
+           theme.test.mjs: a token override placed here must NOT rescale the shadow chain
+           (orchestrator-decisions §8). -->
+      <div id="wrapper">
+        <button id="bare" type="button">Press me</button>
+      </div>
+
+      <button id="classed" class="bn-button" type="button">Press me too</button>
+      <a id="anchor" class="bn-button" href="#anchor">An anchor with the button shape</a>
+      <a id="link" href="#link">A plain link</a>
+
+      <button id="outline" class="bn-outline" type="button">Outline</button>
+      <button id="ghost" class="bn-ghost" type="button">Ghost</button>
+      <button id="danger" data-variant="danger" type="button">Delete</button>
+      <button id="secondary" data-variant="secondary" type="button">Cancel</button>
+
+      <button id="small" class="bn-sm" type="button">Small</button>
+      <button id="large" class="bn-lg" type="button">Large</button>
+      <button id="disabled" type="button" disabled>Disabled</button>
+      <button id="aria-disabled" type="button" aria-disabled="true">Aria disabled</button>
+
+      <!-- A base-layer consumer of the sm tier, not a button: the token hierarchy is read from
+           two independent places. -->
+      <pre id="code"><code>npm install barnacle</code></pre>
+    </main>
+  </body>
+</html>

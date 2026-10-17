@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="data:," />
+    <title>barnacle browser harness — the same rule inside a layer</title>
+    <link rel="stylesheet" href="/barnacle/static/barnacle.css" />
+    <!--
+      The control for cascade.html. Byte-for-byte the same declaration, but written *inside the
+      library's own components layer*, so the layer no longer helps it: within one layer the
+      cascade is back to specificity, and the library's `:is(button, .bn-button)` (0,1,0) beats
+      this `button` (0,0,1). Same declaration, opposite outcome — which is what makes the
+      cascade.html result evidence about layering rather than about specificity or source order.
+    -->
+    <style>
+      @layer components {
+        button {
+          background-color: #008000;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>The same rule inside @layer components</h1>
+      <button id="layered" type="button">Press me</button>
+    </main>
+  </body>
+</html>
