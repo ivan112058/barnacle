@@ -619,6 +619,9 @@
   var TAG_CLASS = "bn-tag";
   var REMOVE_CLASS = "bn-taginput-remove";
   var BADGE_CLASS = "bn-badge";
+  function isComposing(event) {
+    return event?.isComposing === true || event?.keyCode === 229;
+  }
   function normaliseTags(value) {
     const list = value == null ? [] : Array.isArray(value) ? value : [value];
     const seen = /* @__PURE__ */ new Set();
@@ -797,6 +800,7 @@
      *   navigating back).
      */
     onKeydown(event) {
+      if (isComposing(event)) return false;
       if (super.onKeydown(event)) return true;
       return this._handleKey(event);
     }
@@ -897,6 +901,7 @@
     onInput(event) {
       const input = this._input;
       if (!input || event?.target !== input) return;
+      if (isComposing(event)) return;
       if (!input.value.includes(TAG_DELIMITER)) return;
       const parts = input.value.split(TAG_DELIMITER);
       const pending = parts.pop() ?? "";

@@ -242,12 +242,15 @@ const isChinesePath = (publishedPath) => {
 /**
  * A published URL that identifies one page, whatever form the link happened to use.
  *
- * The site's own pages are linked in three shapes: `/barnacle/components/` (the canonical URL),
- * `/barnacle/components/index` (seite's `prev`/`next` link to a collection index — measured on
- * card.html and dialog.html) and, in principle, `/barnacle/usage.html`. All three are served, so
- * a 404 crawl alone would not notice that the same page has three URLs; folding them here is what
- * lets the crawl compare *pages* rather than *strings*. The non-canonical forms are still listed
- * in the run's output, because they are worth fixing even when they resolve.
+ * The crawl has to compare *pages* rather than *strings*: `/barnacle/components/`,
+ * `/barnacle/components/index` and `/barnacle/usage.html` can all be served for the same page,
+ * and a 404 crawl alone would not notice the site linking two URLs for it. Folding them here is
+ * what makes the reachability comparison sound.
+ *
+ * Folding is not forgiveness: the pager used to emit `/barnacle/components/index` for a
+ * collection index (measured on card.html and dialog.html), which is the shape GitHub Pages does
+ * not universally serve, so the non-canonical forms are collected as `aliases` and a check
+ * rejects any of them. The canonical/hreflang/sitemap URL is the trailing-slash form.
  */
 function canonicalPath(publishedPath) {
   if (publishedPath.endsWith('/index')) return publishedPath.slice(0, -'index'.length);
@@ -1016,6 +1019,24 @@ try {
     if (crawl.relativeRefs.length > 0) {
       info(`${crawl.relativeRefs.length} relative reference(s) resolve inside the site (allowed): ${crawl.relativeRefs.join(', ')}`);
     }
+
+    /*
+     * The crawl folds non-canonical URLs into their canonical page so the comparison is about
+     * pages, not strings (see `canonicalPath`) — which also means a `/…/components/index` link
+     * would pass every check above. It is not an acceptable link: GitHub Pages does not fall back
+     * from an extensionless path to `.html` on every request, and the pager used to emit exactly
+     * that form for a collection index. So the folding is now only an analysis device; linking a
+     * second URL of the same page is a failure of its own.
+     */
+    await check("every page link uses that page's canonical URL (no /index or .html aliases)", () => {
+      const aliases = [...crawl.aliases].map(([alias, canonical]) => `${alias} → ${canonical}`);
+      must(
+        aliases.length === 0,
+        `links in a non-canonical form — the canonical URL of the same page is the ` +
+          `trailing-slash one:\n  ${aliases.join('\n  ')}`,
+      );
+      return `${crawl.pages.length} requested URL(s), all in canonical form`;
+    });
 
     await check('every page reachable from the homepage answers 200 (no 404 anywhere)', () => {
       const broken = crawl.pages

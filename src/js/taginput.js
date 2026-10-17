@@ -57,6 +57,22 @@ const REMOVE_CLASS = 'bn-taginput-remove';
 const BADGE_CLASS = 'bn-badge';
 
 /**
+ * `true` while an input method (a Chinese/Japanese/Korean candidate list, a phone keyboard's
+ * suggestion strip) owns the keyboard. `isComposing` is the standard flag on both `keydown` and
+ * `input`; `keyCode === 229` is the older signal that some engines deliver for a key the IME
+ * swallowed, and it arrives even for events whose `isComposing` never became true.
+ *
+ * The component must stay out of the way for exactly as long as this is true: keys belong to the
+ * candidate list, and the field's value is a draft of a word, not a draft of a tag.
+ *
+ * @param {KeyboardEvent|InputEvent} event
+ * @returns {boolean}
+ */
+function isComposing(event) {
+  return event?.isComposing === true || event?.keyCode === 229;
+}
+
+/**
  * Parses anything the author or the caller can hand us into the canonical tag list:
  * trimmed, empties dropped, duplicates dropped (case-sensitively), order preserved.
  *
@@ -288,6 +304,11 @@ export class BnTagInput extends BnBase {
    *   navigating back).
    */
   onKeydown(event) {
+    // An input method owns the keyboard while its candidate list is open. `Enter` there accepts
+    // the candidate and would otherwise commit half a word as a tag, and a comma typed inside a
+    // composition is text, not the delimiter. `isComposing` is the standard signal; `keyCode 229`
+    // is what some engines still deliver for the keys pressed while composing.
+    if (isComposing(event)) return false;
     if (super.onKeydown(event)) return true;
     return this._handleKey(event);
   }
@@ -407,6 +428,10 @@ export class BnTagInput extends BnBase {
   onInput(event) {
     const input = this._input;
     if (!input || event?.target !== input) return;
+    // The intermediate `input` events of a composition carry candidate text, not typed text: the
+    // delimiter in `"中, 文"` is part of the word being composed. The final event (fired after
+    // `compositionend`, with `isComposing` false) is the one that commits.
+    if (isComposing(event)) return;
     if (!input.value.includes(TAG_DELIMITER)) return;
 
     const parts = input.value.split(TAG_DELIMITER);

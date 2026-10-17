@@ -55,10 +55,18 @@
       <div class="site-prose">{{ page.content | safe }}</div>
     </div>
 
+    {#
+      seite hands a collection index page the url `/components/index`, while the page's canonical
+      URL — the one <link rel="canonical">, the hreflang alternates and the sitemap all use — is
+      the trailing-slash form `/components/`. GitHub Pages does not fall back from `.html` to the
+      extensionless path on every request, so a pager link must be the canonical form or it is a
+      404 waiting to happen. `replace` only ever fires on that one suffix: every other page URL
+      (`/components/button`) passes through unchanged.
+    #}
     <div class="bn-col-12" data-site-column="pager">
       <nav class="site-pager" aria-label="{{ data.i18n[lang].pager_label }}">
-        {% if prev_post %}<a class="site-pager__prev" href="{{ page_base }}{{ prev_post.url }}">← {{ prev_post.title }}</a>{% endif %}
-        {% if next_post %}<a class="site-pager__next" href="{{ page_base }}{{ next_post.url }}">{{ next_post.title }} →</a>{% endif %}
+        {% if prev_post %}<a class="site-pager__prev" href="{{ page_base }}{{ prev_post.url | replace(from="/index", to="/") }}">← {{ prev_post.title }}</a>{% endif %}
+        {% if next_post %}<a class="site-pager__next" href="{{ page_base }}{{ next_post.url | replace(from="/index", to="/") }}">{{ next_post.title }} →</a>{% endif %}
       </nav>
     </div>
   </div>

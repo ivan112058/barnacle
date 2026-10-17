@@ -306,6 +306,20 @@ function keyOn(key, target) {
   return pressed;
 }
 
+/**
+ * A key the input method owns: `Enter` accepting a candidate, or the bare `,` typed inside a
+ * composition. `isComposing` is the standard flag; `keyCode: 229` is the older signal a few
+ * engines still send for a key the IME swallowed.
+ */
+function composingKeyOn(key, target, init = {}) {
+  return Object.assign(keyOn(key, target), { isComposing: true, ...init });
+}
+
+/** An intermediate `input` event of a composition: candidate text, not typed text. */
+function composingType(input, text) {
+  return Object.assign(type(input, text), { isComposing: true });
+}
+
 /** The component's `input` listener reads the field, so a test types by writing it, then firing. */
 function type(input, text) {
   input.value = text;
@@ -387,6 +401,57 @@ test('the comma commits too, and a pasted list splits on it while the unfinished
   element.dispatchEvent(keyOn('Enter', input));
   assert.deepEqual(element.tags(), ['Design', 'Code', 'One', 'Two', 'Three']);
   assert.equal(input.value, '');
+});
+
+test('Enter pressed while an IME is composing accepts the candidate, not a tag', () => {
+  const { element, input } = connect(createTagInput({ value: 'Design' }));
+  const seen = [];
+  element.addEventListener('bn:change', (announced) => seen.push(announced));
+
+  input.value = '中文';
+  const pressed = composingKeyOn('Enter', input);
+  element.dispatchEvent(pressed);
+
+  assert.deepEqual(element.tags(), ['Design'], 'a half-composed word never becomes a tag');
+  assert.equal(input.value, '中文', 'the field keeps the candidate text for the IME to finish');
+  assert.equal(pressed.defaultPrevented, false, 'the key belongs to the candidate list');
+  assert.equal(seen.length, 0, 'no tag, no event');
+
+  // The same press, once the composition has ended, is a normal Enter again.
+  element.dispatchEvent(event('compositionend', input));
+  element.dispatchEvent(keyOn('Enter', input));
+  assert.deepEqual(element.tags(), ['Design', '中文'], 'after compositionend the composed word commits');
+  assert.equal(input.value, '');
+});
+
+test('a comma typed inside a composition is word text, not the delimiter', () => {
+  const { element, input } = connect(createTagInput({ value: 'Design' }));
+
+  const comma = composingKeyOn(',', input);
+  element.dispatchEvent(comma);
+  assert.equal(comma.defaultPrevented, false, "the comma stays the IME's character");
+  assert.deepEqual(element.tags(), ['Design']);
+
+  // A composition's intermediate `input` events carry candidate text that may contain a comma.
+  element.dispatchEvent(composingType(input, '中, 文'));
+  assert.deepEqual(element.tags(), ['Design'], 'a delimiter inside a composition is part of the word');
+  assert.equal(input.value, '中, 文', 'the field is left exactly as the IME wrote it');
+
+  // compositionend, then the final input event, is what commits — as it always was.
+  element.dispatchEvent(event('compositionend', input));
+  element.dispatchEvent(type(input, 'One, Two'));
+  assert.deepEqual(element.tags(), ['Design', 'One'], 'the completed text commits as usual');
+  assert.equal(input.value, 'Two', 'the tail after the delimiter is still a draft');
+});
+
+test('keyCode 229 counts as composing even when the flag never became true', () => {
+  const { element, input } = connect(createTagInput());
+  input.value = 'かな';
+  const pressed = composingKeyOn('Enter', input, { isComposing: false, keyCode: 229 });
+  element.dispatchEvent(pressed);
+
+  assert.deepEqual(element.tags(), [], 'the legacy signal is enough to leave the key to the IME');
+  assert.equal(input.value, 'かな', 'and the draft stays in the field');
 });
 
 test('an empty or whitespace-only value commits nothing and leaves the key to the browser', () => {
