@@ -567,18 +567,38 @@ await check('the chip is a badge: taginput.css arranges it and never repaints it
   return `${chipRules.length} chip rule(s), layout only; the visual comes from the .bn-badge class`;
 });
 
-await check('no rule disables an outline, and the focus ring is left to the base layer (WCAG F78)', () => {
+await check('no rule disables an outline, and the ring stays the base layer’s (WCAG F78)', () => {
   must(!/outline(?:-style)?\s*:\s*(?:none|0)\b/.test(source), 'the source contains `outline: none`');
-  const outlineDeclarations = allDeclarations.filter(({ property }) => property.startsWith('outline'));
+  const removals = allDeclarations.filter(({ property }) =>
+    ['outline', 'outline-style', 'outline-color', 'outline-width'].includes(property),
+  );
   must(
-    outlineDeclarations.length === 0,
-    `taginput.css restates or removes the ring: ${outlineDeclarations.map(({ property, value }) => `${property}: ${value}`).join('; ')}`,
+    removals.length === 0,
+    `taginput.css restates or removes the ring: ${removals.map(({ property, value }) => `${property}: ${value}`).join('; ')}`,
+  );
+  // One offset is allowed, and only for the entry field's ring: tighter than the library default,
+  // because a field's padding is smaller than a card's (and it is the ring's own geometry, which
+  // spec §7 fixes literally). It sits on a `:focus-visible` selector and never grows past it.
+  const offsets = allDeclarations.filter(({ property }) => property === 'outline-offset');
+  must(offsets.length > 0, 'the entry field expected a tighter ring offset; the rule is gone');
+  for (const offset of offsets) {
+    must(
+      /^(?:\d+px|var\(--_focus-ring-offset\))$/.test(offset.value),
+      `only the ring's own thickness may be a literal: outline-offset: ${offset.value}`,
+    );
+  }
+  const offsetRules = rules.filter((rule) =>
+    declarations(rule.body).some(([property]) => property === 'outline-offset'),
+  );
+  must(
+    offsetRules.every((rule) => /:focus-visible/.test(rule.selector)),
+    `an outline-offset outside a focus rule: ${offsetRules.map((rule) => rule.selector).join(', ')}`,
   );
   must(!/outline\s*:\s*none/.test(rawArtifact), 'the artifact contains `outline: none`');
   // The ring the visitor sees is the base layer's, so the file must not be the only ring around.
   const base = fs.readFileSync(abs('src/css/00-base.css'), 'utf8');
   must(/:focus-visible\s*{[^}]*outline:\s*var\(--_focus-ring\)/.test(blankComments(base)), 'the base layer stopped drawing the ring');
-  return 'no outline is declared or removed here; the base layer draws every ring';
+  return `${offsets.length} tighter offset(s) on the focused entry; no ring is declared, restated or removed`;
 });
 
 await check('every size is declared once and no state rule can change a box (spec §3 invariant 7)', () => {
@@ -605,8 +625,11 @@ await check('every size is declared once and no state rule can change a box (spe
 });
 
 await check('every geometry value reads a --_ slot, and motion lives inside the no-preference guard', () => {
+  // The ring's own thickness is the one number spec §7 fixes literally (and the check above keeps
+  // it to the focused entry field only); everything else must be a slot reference.
   const offenders = allDeclarations
-    .filter(({ property, value }) => GEOMETRY_PROPERTIES.includes(property) && /\d/.test(value))
+    .filter(({ property }) => GEOMETRY_PROPERTIES.includes(property) && property !== 'outline-offset')
+    .filter(({ value }) => /\d/.test(value))
     .map(({ selector, property, value }) => `${selector} { ${property}: ${value} }`);
   must(offenders.length === 0, `geometry must be a var(--_…) reference (spec §3 invariant 3): ${offenders.join('; ')}`);
 
@@ -756,10 +779,12 @@ const BROWSER_CHECKS = [
         state = await stage();
         must(state.activeIsEntry, 'three Tabs must reach the entry field');
         must(state.focusVisible, 'reaching the field with the keyboard must paint :focus-visible');
+        // The ring is the base layer's outline; only its offset is tighter (2px), because the entry
+        // is a flex item inside a framed field and the chip's frame is 6px away.
         must(
           state.entryStyle.outlineStyle === 'solid' &&
             state.entryStyle.outlineWidth === '3px' &&
-            state.entryStyle.outlineOffset === '3px' &&
+            state.entryStyle.outlineOffset === '2px' &&
             state.entryStyle.outlineColor === RING_COLOR,
           `the field's focus ring is incomplete: ${JSON.stringify(state.entryStyle)}`,
         );
