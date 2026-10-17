@@ -680,7 +680,133 @@ a {
 }
 /* src/css/toast.css (@layer components) */
 @layer components {
-/* toast.css — filled by ticket 22 (layer: components) */
+/* toast.css — the transient message layer: a fixed stack of messages that disappear on their own.
+ * (layer: components, assigned by CSS_MANIFEST in scripts/build.mjs — this file writes no @layer.)
+ *
+ * The elements are created by JS, never authored (spec §8: Toast's anchor column is "—", its API
+ * is the global `bn.toast()`). Both class names are therefore `bn-` prefixed: they mark library
+ * internals rather than a namespace the page is expected to write (ADR-0005, orchestrator §1).
+ *
+ * Four things are deliberate here.
+ *
+ *   1. The container does not eat the page. It is a fixed box, so it sits on top of whatever is in
+ *      the bottom-right corner; `pointer-events: none` on the container and `auto` on each toast
+ *      means only the messages themselves are click targets — the gaps between them, and the whole
+ *      strip above them, pass every click through to the page underneath. (This is the one place
+ *      the library wants a z-index at all: 100 is enough to clear page content, and `dialog` never
+ *      needs it because the top layer is above every z-index. A "very large" number such as 9999
+ *      would only invite users to climb higher.)
+ *   2. No geometry literal and no colour literal. The shadow tier comes from `--_shadow-rest`, the
+ *      slide distance from `--_press-y`, the animation duration from `--_motion` — all declared
+ *      once on `:root` in 00-base.css (orchestrator §4). A toast has no press or hover state, so
+ *      the press slot is free to carry the small vertical shift, and it rescales with `--bn-press`
+ *      like every other displacement in the library.
+ *   3. Meaning rides `data-variant`, and this file contains no `[data-variant]` rule: 01-theme.css
+ *      publishes `--_variant-color` for the semantic names, and the border below consumes it with
+ *      a local fallback (`var(--_variant-color, var(--bn-border-color))`), so "no variant" and
+ *      "unknown variant" look identical. Declaring the property here instead would be a bug, not a
+ *      shortcut: a components-layer declaration beats the theme-layer mapping and every variant
+ *      would silently fall back to the border colour.
+ *   4. The shadow keeps the page's own hard-shadow colour rather than the variant colour. The
+ *      shadow tokens (`--bn-shadow-md`) are substituted where they are declared, on `:root`, so
+ *      setting `--bn-shadow-color` on a toast changes nothing — the inherited string already has
+ *      its colour baked in (orchestrator §8, measured by ticket 05). Colouring it here would mean
+ *      restating the blur/spread/offset structure outside 01-theme.css, which is what §4 forbids.
+ *      The variant therefore shows as the border, exactly as `.bn-outline` shows it on a button.
+ *
+ * Entry and exit are animations, and both live inside `@media (prefers-reduced-motion:
+ * no-preference)` (spec §7): the reduced case is the absence of a rule rather than a rule that
+ * switches motion off afterwards. `toast.js` reads the computed `animation-duration` from the
+ * element it is about to close, so under reduced motion it computes to 0s and the element is
+ * removed immediately instead of waiting 150 ms for an animation that will never play.
+ */
+
+/* ==============================================================================================
+ * 1. The stack.
+ * ============================================================================================ */
+.bn-toast-container {
+  position: fixed;
+  z-index: 100;
+  inset-block-end: 1rem;
+  inset-inline-end: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;                          /* 12px > the largest shadow offset (6px), so neighbours
+                                            never share a shadow and neither looks mis-stacked */
+  inline-size: min(22rem, calc(100vw - 2rem));   /* never wider than the viewport minus its own
+                                                    insets — no horizontal overflow on a phone */
+  pointer-events: none;                  /* the strip is transparent to clicks; the toasts are not */
+}
+
+/* ==============================================================================================
+ * 2. One message.
+ * ============================================================================================ */
+.bn-toast {
+  pointer-events: auto;                  /* …the one exception to the line above */
+  box-sizing: border-box;                /* padding and border must not push it out of the column */
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+
+  /* Second surface, one step brighter than the page in both themes, so the message reads as a
+     floating slip of paper rather than as another paragraph (spec §6.2 keeps this token pair). */
+  background: var(--bn-secondary-background);
+  color: var(--bn-foreground);
+
+  /* The structural box is stated once and in no state rule: a variant changes the border colour
+     and can never change a width, so it cannot reflow anything (spec §3 invariant 7). */
+  border-style: solid;
+  border-width: var(--bn-border-width);
+  border-radius: var(--bn-radius);
+  border-color: var(--_variant-color, var(--bn-border-color));
+  box-shadow: var(--_shadow-rest);
+}
+
+/* The message may be an element rather than a string (`toast(node)`), in which case the page's own
+   paragraph metrics would otherwise add a stray margin inside the padding. */
+.bn-toast > :first-child {
+  margin-block-start: 0;
+}
+
+.bn-toast > :last-child {
+  margin-block-end: 0;
+}
+
+/* ==============================================================================================
+ * 3. Motion — declared only where the visitor has not asked for less of it (spec §7).
+ *
+ *    `translate` is used as its own property, not folded into `transform`: the shared interaction
+ *    geometry owns `transform` for hover and press, and a `both`-filled animation that pinned
+ *    `transform` on the toast subtree would be the exact trap the recipes warn about. A toast has
+ *    no hover state, so the two never meet — but keeping them in separate properties makes that
+ *    structural instead of a coincidence.
+ * ============================================================================================ */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes bn-toast-in {
+    from {
+      opacity: 0;
+      translate: 0 var(--_press-y);
+    }
+  }
+
+  @keyframes bn-toast-out {
+    to {
+      opacity: 0;
+      translate: 0 var(--_press-y);
+    }
+  }
+
+  .bn-toast {
+    animation: bn-toast-in var(--_motion) both;
+  }
+
+  /* Higher specificity than the entry rule above, and the exit replaces the entry outright
+     rather than playing both: one `animation` declaration wins the cascade. */
+  .bn-toast[data-closing] {
+    animation: bn-toast-out var(--_motion) both;
+  }
+}
 }
 /* src/css/layout.css (@layer components) */
 @layer components {
