@@ -1561,7 +1561,168 @@ dialog > :last-child {
 }
 /* src/css/accordion.css (@layer components) */
 @layer components {
-/* accordion.css — filled by ticket 15 (layer: components) */
+/* accordion.css — the bare `details` / `summary` pair, and the one mark the disclosure needs.
+ * (layer: components, assigned by CSS_MANIFEST in scripts/build.mjs — this file writes no @layer.)
+ *
+ * The browser already owns the opening: `details` and `summary` are a disclosure widget in HTML,
+ * so this file adds appearance and nothing else. Three contracts carry it.
+ *
+ * 1. THE ELEMENT IS THE ANCHOR (ADR-0001, spec §8). No class, no attribute, no custom element, no
+ *    script. Enter and Space toggle a focused `summary` because it is a real interactive element,
+ *    the focus ring is the base layer's single `:focus-visible` rule (3px outline, 3px offset,
+ *    drawn outside the frame so the frame cannot swallow it), and the panel opens with scripting
+ *    switched off because the toggle is not ours to implement (spec §3 invariant 6).
+ *
+ * 2. ONE STATE, AND IT NEVER MOVES A BOX (spec §3 invariant 7). `details[open]` is the only state
+ *    axis. The open rule changes the mark's travel, its rotation and its colour, and nothing else:
+ *    no border width, no padding, no size. The summary is the same box before and after, and the
+ *    separator above the panel is a `border-block-start` on the panel itself — it comes into
+ *    existence with the content (a `summary + …` rule gives it exactly one owner) instead of
+ *    thickening the header. A nested `details` dropped straight into a panel keeps its own frame,
+ *    so it takes the gap that a text panel takes as padding.
+ *
+ * 3. THE MARK'S TRAVEL COMES FROM THE SHADOW SCALE (spec §3 invariant 3). The open mark is a
+ *    `translate` of the two lift slots and a 45° rotation: a square turns into a diamond, and its
+ *    colour leaves the accent for the danger accent while the panel is open. The travel is not a
+ *    number chosen here — 00-base.css declares `--_lift-x` / `--_lift-y` as
+ *    `calc(var(--bn-shadow-lift) * -1)`, and that token is `calc(var(--bn-shadow-x) / 2)` in
+ *    01-theme.css, so overriding `--bn-shadow-x` on :root rescales the mark's travel and the item's
+ *    hard shadow together, in step. The 45° is an angle, not a distance; the only other lengths in
+ *    this file are the structural border width, the mark's size derived from it, and the type-free
+ *    spacing scale.
+ *
+ * Not in this file, on purpose: no `@layer` (the manifest owns the layer), no colour literal, no
+ * declaration marked as important (the layer contract makes the flag unnecessary), no `outline`
+ * (the ring belongs to the base layer, and restating it here is how a second, different offset
+ * appears), and no hover lift — an accordion sits in the page flow, so raising it would move
+ * everything underneath it.
+ */
+
+/* ==============================================================================================
+ * 1. The item — a static block on the small tier (ADR-0003: it is not an interactive object and
+ *    must not compete with a button). The frame, the surface and the radius are declared once, so
+ *    no state rule ever has to restate a width.
+ * ============================================================================================ */
+details {
+  border: var(--bn-border-width) solid var(--bn-border-color);
+  border-radius: var(--bn-radius);       /* 0 — square corners are the point (spec §6.1) */
+  background: var(--bn-secondary-background);
+  box-shadow: var(--bn-shadow-sm);
+}
+
+/* A stack of panels. The gap is wider than the hard shadow, so two items never paint onto each
+   other and neither looks layered on top of its neighbour. */
+details + details {
+  margin-block-start: 0.75rem;
+}
+
+/* ==============================================================================================
+ * 2. The header — the interactive part. `display: flex` places the mark at the end of the line and
+ *    drops the user agent's triangle, which is why the marker rules below exist as well. The box is
+ *    fixed here: padding, no border of its own, and no size that any state could change.
+ * ============================================================================================ */
+summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-family: var(--bn-font-display);
+  font-weight: var(--bn-font-weight-heading);
+  cursor: pointer;
+  list-style: none;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+/* ==============================================================================================
+ * 3. The mark — a square whose content box is three structural borders wide, so the whole mark
+ *    scales with `--bn-border-width` and never with a number of its own.
+ *
+ *    Closed: square, in the accent, sitting still. Open: turned 45° into a diamond, travelling by
+ *    the shared lift slots, in the danger accent. Because `translate` and `rotate` are their own
+ *    properties, the travel and the rotation are two declarations that cannot overwrite each
+ *    other — and the geometry audit can read the travel as the two slots it is.
+ * ============================================================================================ */
+summary::after {
+  content: "";
+  flex: none;
+  inline-size: calc(var(--bn-border-width) * 3);
+  block-size: calc(var(--bn-border-width) * 3);
+  background-color: var(--bn-main);
+  border: var(--bn-border-width) solid var(--bn-border-color);
+}
+
+details[open] > summary::after {
+  translate: var(--_lift-x) var(--_lift-y);
+  rotate: 45deg;
+  background-color: var(--bn-danger);
+}
+
+/* ==============================================================================================
+ * 4. The panel — the content the browser reveals. Padding and the separator live here, on the
+ *    element that appears, so opening a panel cannot change the header's box.
+ *
+ *    The separator is owned by exactly one element: the first thing after the summary. Padding on
+ *    every content child keeps a multi-paragraph panel aligned with the header text, and the last
+ *    child gives up its bottom margin so the panel's padding is the only space before the frame.
+ *    A nested `details` is excluded from both: it carries its own frame, and adding a border or a
+ *    padding to it would stack two frames.
+ * ============================================================================================ */
+details > :not(summary):not(details) {
+  padding-inline: 1rem;
+  /* The panel is the measure. A paragraph carries the page's 68ch reading width by default, which
+     would end the separator above it in mid-air; inside a panel the item's own width is the
+     measure, so the line drawn by the rule below reaches the frame. */
+  max-inline-size: none;
+}
+
+details > summary + :not(details) {
+  padding-block-start: 0.75rem;
+  border-block-start: var(--bn-border-width) solid var(--bn-border-color);
+}
+
+details > :not(summary):not(details):last-child {
+  padding-block-end: 0.75rem;
+  margin-block-end: 0;
+}
+
+/* A nested panel that is a direct child of a panel keeps its own frame, so it takes the gap on
+   both sides instead of the padding and the separator above. */
+details > details {
+  margin-block: 0.75rem;
+}
+
+/* ==============================================================================================
+ * 5. Hover — a tint, never a lift. The pointer affordance belongs to the header only, and the tint
+ *    is mixed from tokens so the dark theme flips it with the surface it is mixed against.
+ *    Guarded with (hover: hover) so a touch device cannot stick in the hovered state.
+ * ============================================================================================ */
+@media (hover: hover) {
+  details > summary:hover {
+    background-color: color-mix(in srgb, var(--bn-main) 30%, var(--bn-secondary-background));
+  }
+}
+
+/* ==============================================================================================
+ * 6. Motion — declared only where the visitor accepts it, never switched off afterwards (spec §7).
+ *    The mark animates its travel, its rotation and its fill; the header animates its tint. With
+ *    reduced motion both are absent and the two states are still complete and still different.
+ * ============================================================================================ */
+@media (prefers-reduced-motion: no-preference) {
+  summary {
+    transition: background-color var(--_motion);
+  }
+
+  summary::after {
+    transition:
+      rotate var(--_motion),
+      translate var(--_motion),
+      background-color var(--_motion);
+  }
+}
 }
 /* src/css/progress.css (@layer components) */
 @layer components {
