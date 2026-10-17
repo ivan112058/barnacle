@@ -1,0 +1,23 @@
+{#-
+  <head> alternates (ticket 23, spec §14 item 3).
+
+  Measured on seite 0.20.1: `sitemap.xml` DOES get `<xhtml:link rel="alternate" hreflang=…>` for
+  every URL that has a translation — but the page <head> gets nothing at all, and the sitemap only
+  carries `x-default` on the two homepage entries (/ and /zh/). So the head is written here, and
+  x-default always points at the English (default-language) URL.
+
+  Nothing is emitted for a page with no counterpart: a hreflang to a 404 is worse than no hreflang.
+  The pair test is the same one templates/_i18n_switcher.html uses, including its collection-index
+  exception.
+-#}
+{%- set_global i18n_en_path = page.url -%}
+{%- set_global i18n_zh_path = "/zh" ~ page.url -%}
+{%- if lang != "en" -%}
+{%- set_global i18n_en_path = page.url | replace(from="/zh", to="") -%}
+{%- set_global i18n_zh_path = page.url -%}
+{%- endif -%}
+{%- if translations | length > 1 or page.slug == page.collection -%}
+<link rel="alternate" hreflang="en" href="{{ site.base_url }}{{ i18n_en_path }}">
+<link rel="alternate" hreflang="zh" href="{{ site.base_url }}{{ i18n_zh_path }}">
+<link rel="alternate" hreflang="x-default" href="{{ site.base_url }}{{ i18n_en_path }}">
+{% endif -%}

@@ -1,0 +1,102 @@
+---
+# 本文件由 scripts/i18n-zh.mjs 从 components/tabs.md 生成，请勿手改；要改译文请改那边。
+title: "标签页"
+description: "bn-tabs 装扮你已经写好的标签结构：一个 Tab 落点、方向键、Home 与 End，以及 ARIA 自己无法表达的面板记账。"
+---
+
+标签页不发明标记。你写 `role="tablist"`、`role="tab"` 与 `role="tabpanel"`——屏幕阅读器本来就懂的
+结构——而 `<bn-tabs>` 补上那些 role 承载不了的行为：`Tab` 键到达哪个标签、方向键往哪里去、哪个面板可见。
+严格意义上它是一个浅包装（ADR-0002）：没有 shadow DOM，没有生成的元素，也不重写你写的子树。
+
+```html
+<bn-tabs>
+  <div role="tablist" aria-label="Account settings">
+    <button type="button" role="tab" id="tab-profile" aria-controls="panel-profile" aria-selected="true">Profile</button>
+    <button type="button" role="tab" id="tab-billing" aria-controls="panel-billing">Billing</button>
+    <button type="button" role="tab" id="tab-danger" aria-controls="panel-danger">Danger zone</button>
+  </div>
+  <div role="tabpanel" id="panel-profile" aria-labelledby="tab-profile">
+    <p>The name, the avatar and the language the account speaks.</p>
+  </div>
+  <div role="tabpanel" id="panel-billing" aria-labelledby="tab-billing">
+    <p>The plan, the invoices and the card on file.</p>
+  </div>
+  <div role="tabpanel" id="panel-danger" aria-labelledby="tab-danger">
+    <p>Deleting the account. This one asks twice.</p>
+  </div>
+</bn-tabs>
+```
+
+### 键盘
+
+标签条在 Tab 顺序里只有一个落点，方向键在里面移动选中项：
+
+- `Tab` 到达选中的标签，然后离开标签条——其它标签离你一个按键，而不是一个 `Tab`。这就是游走 tabindex：
+  选中的标签上是 `tabindex="0"`，其余全是 `-1`，由这个元素维护。
+- `ArrowRight` 与 `ArrowLeft`（以及 `ArrowDown` / `ArrowUp`）移到相邻的标签，而焦点跟随选中项，所以你
+  站着的那个标签永远就是你能读的那个面板。
+- `Home` 与 `End` 跳到第一个与最后一个标签。
+- 两端就是两端：方向键在那里停住，不绕回去。
+- 在面板里按下的键留给面板。面板里的 `<textarea>` 保留自己的方向键，因为这里只有在标签上按下的键才是
+  导航键。
+
+选中与焦点保持可区分。选中的标签用 `--bn-main` 填满，硬阴影收起来——这是按下按钮的静止形态——而键盘
+焦点在它外面画出库的焦点环。只有键盘会画出那个环：点击只选中，不点亮它。
+
+### 事件
+
+每次切换都会以一个冒泡、composed 的 `CustomEvent` 宣告自己，名字是 `bn:change`。
+
+```js
+const tabs = document.querySelector('bn-tabs');
+
+tabs.addEventListener('bn:change', (event) => {
+  const { index, tab, panel } = event.detail;
+  console.log(index, tab, panel);
+});
+```
+
+- `detail.index`——选中标签的位置，从 `0` 数起。
+- `detail.tab`——被选中的那个标签元素本身。
+- `detail.panel`——那个标签控制的面板；标记里没有对应面板时是 `null`。
+
+选中已经选中的标签不算一次变化，所以什么也不派发；加载页面同样不算变化。事件会冒泡，所以任何祖先上的
+监听器都听得到。
+
+### 这个元素写了什么
+
+它的全部就是这些行为——几个属性，别的什么都没有：
+
+- 选中的标签上 `aria-selected="true"`，其余是 `false`。
+- 选中的标签上 `tabindex="0"`，其余是 `-1`。
+- 除选中面板之外的每个面板上都有 `hidden`。
+- 缺的 id 与链接：没有 `id` 的标签会得到 `bn-tab-1`，没有 `id` 的面板会得到 `bn-tabpanel-2`，缺的
+  `aria-controls` 会被补上，而没有 `aria-labelledby` 的面板会反向指向它的标签。
+
+你自己写的 id 与属性永远不会被重写。因此 `aria-controls` 决定一个标签拥有哪个面板，即使面板的排列顺序
+和标签不同。
+
+### 没有 JavaScript 时
+
+隐藏面板是脚本的活，从来不是标记的活，这才让脚本没到时页面仍然可读。上面的示例在写作时不写 `hidden`
+属性，于是关掉脚本的读者会在同一条标签条下面，依次看到三个面板。
+
+```html
+<!-- nothing in this markup is hidden: every panel is readable without the script -->
+<bn-tabs>
+  <div role="tablist" aria-label="Account settings">
+    <button type="button" role="tab" aria-selected="true">Profile</button>
+    <button type="button" role="tab">Billing</button>
+  </div>
+  <div role="tabpanel">The name, the avatar and the language the account speaks.</div>
+  <div role="tabpanel">The plan, the invoices and the card on file.</div>
+</bn-tabs>
+```
+
+### 覆盖它
+
+标签条的几何取自与按钮相同的槽位，所以常规的两个旋钮都适用，而且一个都不需要 `!important`。写不分层的
+CSS 就直接赢，因为库发布的每条规则都在级联层里（ADR-0006）。或者在 `:root` 上改一个令牌：`--bn-main`
+重绘选中的标签，`--bn-shadow-x` 同时缩放每一档阴影与悬停位移，而 `--bn-press` 设定标签被按下时下沉的
+幅度。令牌必须改在 `:root` 上——派生令牌在它被声明的地方就已经替换完毕，所以写在页面中段某个包裹元素上的
+同样声明什么也不会改变。

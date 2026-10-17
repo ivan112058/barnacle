@@ -1,0 +1,119 @@
+---
+# 本文件由 scripts/i18n-zh.mjs 从 components/form.md 生成，请勿手改；要改译文请改那边。
+title: "表单"
+description: "文本输入、弹出列表、多行输入、复选框、单选按钮，以及容纳它们的组——全部从裸元素装扮而来，并且带一个只在用户开口之后才出现的错误状态。"
+---
+
+Barnacle 装扮的是控件本身——`input`、`select`、`textarea`、`label`、`fieldset` 与 `legend`——所以
+一个表单不需要类、不需要包裹元素，这里也没有任何东西需要脚本。写你本来就会写的标记，一个输入字段就带着
+3px 的承重外框、页面的第二层表面与小档阴影到来：
+
+```html
+<fieldset>
+  <legend>Account</legend>
+  <label for="email">Email</label>
+  <input id="email" type="email" required>
+  <label for="name">Name</label>
+  <input id="name" type="text">
+  <label for="plan">Plan</label>
+  <select id="plan">
+    <option>Free</option>
+    <option>Pro</option>
+  </select>
+  <label for="note">Note</label>
+  <textarea id="note"></textarea>
+</fieldset>
+```
+
+在上面的字段里打点东西再离开：那个地址是 `required` 的、而且不是一个地址，于是外框变红——但只在那时。
+刚进来时什么都不是红的，这正是下一节要讲的。
+
+### 尺寸，以及字段为什么不浮起
+
+字段与按钮共用同一个底高（2.5rem）、同样的 1rem 文字与同样的方角 3px 外框，所以表单与工具栏读起来是
+同一种材料。它不共用按钮的位移：一个正在被输入、却在光标下移动的文本控件是可用性错误，所以悬停时抬起来的
+是*阴影*——从小档升到中档——而什么都不动。档位是一个令牌（静止时是 `--bn-shadow-sm`），所以重新缩放阴影
+系统的主题会连带缩放每一个字段。
+
+`fieldset` 是一个组的外框——同样的 3px 边框、小档阴影与第二层表面——而 `legend` 是它的标题，用展示字体
+按标题字重排。`label` 也取那个标题字重，而跟在复选框或单选按钮后面的标签保持行内流，于是这一对留在同一
+行里。
+
+### 复选框与单选按钮
+
+两者都是从原生元素重画出来的，而两者仍然由 `:checked` 驱动——没有类要切换、没有 `aria-checked` 要跟着
+同步、没有脚本：
+
+```html
+<fieldset>
+  <legend>Notifications</legend>
+  <p><input id="digest" type="checkbox" checked> <label for="digest">Weekly digest</label></p>
+  <p><input id="daily" type="radio" name="frequency"> <label for="daily">Daily</label></p>
+  <p><input id="never" type="radio" name="frequency"> <label for="never">Never</label></p>
+</fieldset>
+```
+
+被勾中的框用 `--bn-main` 填满，并用强调色的墨画出它的记号；单选按钮是唯一一个按定义就是圆形的形状。记号是
+框的子元素，尺寸从框算出来，所以改变外框宽度或框尺寸的主题仍然让记号保持居中。
+
+### 错误，在用户开口之后
+
+触发条件是 `:user-invalid`，不是 `:invalid`。这个差别就是整个设计：对每一个 `required` 字段，`:invalid`
+从第一次绘制起就是真，所以写在它上面的规则会让表单一开始就是一屏红框——那是表单设计里最常见的错误。
+`:user-invalid` 只在用户改过一个值、并且离开那个字段之后才变真，于是错误是作为回答到来，而不是作为招呼：
+
+```html
+<label for="bad-email">Email</label>
+<input id="bad-email" type="email" required placeholder="Type something, then press Tab">
+
+<label for="rejected">Rejected by the server</label>
+<input id="rejected" type="text" aria-invalid="true" value="ada@">
+```
+
+在第一个字段里打一个没有 `@` 的地址，然后按 `Tab`：外框变成 `--bn-danger`，表面也蒙上一层它 10% 的洗色。
+改对再离开一次，两者就都消失了。
+
+第二个字段是同一条规则的另一半，也是兜底：来自服务端的判定由 `aria-invalid="true"` 承载，它完全不需要
+交互。用户还没碰过的字段不可能知道自己错了；而服务端已经拒掉的字段不必再等。
+
+### 是含义轴，不是类
+
+错误是一种含义，所以它像库里其它每个含义一样由 `data-variant` 承担——`danger` 与 `error` 是同一件事的
+两种拼法——永远不是外观类。没有 `.bn-error` 可以加，也没有东西需要混进视觉修饰里：
+
+```html
+<label for="variant">The same rejection, said semantically</label>
+<input id="variant" type="text" data-variant="danger" value="ada@">
+```
+
+这条规则的两种形式都画外框，并且在文本字段上还画表面。两者都不改边框宽度、内边距或尺寸，所以错误可以出现
+而表单不围绕它重排——和悬停按钮遵守的是同一条不变量。还有一样东西是刻意不变的：阴影。那一档是在 `:root`
+上替换的，所以在单个字段上重新指向 `--bn-shadow-color` 根本不会有任何效果；改由外框和那层洗色来传达消息。
+
+### 禁用
+
+禁用的控件保留它的结构与可读的对比度，停止回应指针，而且永远不会被画成错误——平台干脆把它排除在校验之外：
+
+```html
+<fieldset>
+  <legend>Locked preferences</legend>
+  <p><input id="alias" type="text" value="ada" disabled> <label for="alias">Alias</label></p>
+  <p><input id="tabs" type="checkbox" checked disabled> <label for="tabs">Tab size 4</label></p>
+</fieldset>
+```
+
+### 覆盖它
+
+两个旋钮，两个都不需要逃生舱。写不分层的 CSS 就直接赢，因为库发布的每条规则都在级联层里（ADR-0006）
+——见[自定义主题](/zh/customizing)。或者在 `:root` 上改一个令牌：
+
+```css
+:root {
+  --bn-border-width: 4px;
+  --bn-danger: #B4232A;
+}
+```
+
+`--bn-border-width` 加粗每一副外框——字段、框、组，以及开关里的那个间隙一起——而 `--bn-danger` 重绘错误
+外框和它的洗色。令牌必须改在 `:root` 上：派生令牌在它被声明的地方就已经替换完毕，所以写在页面中段某个
+包裹元素上的同样声明什么也不会改变。

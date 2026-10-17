@@ -171,6 +171,35 @@ a:hover:not(.site-demo__panel--preview *) {
 }
 
 /*
+ * The language switcher (ticket 23). Two items in a fixed order — English then 中文 — so the
+ * control does not jump when you switch: the current language is the inverted one. It is a
+ * <span>, not a link to itself, and the other language is a real <a>, so the switcher works
+ * without JavaScript and is reached by Tab like every other nav item.
+ */
+.site-lang {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.125rem;
+  border: var(--site-line) solid var(--site-ink);
+  background: var(--site-surface);
+}
+
+.site-lang__item {
+  padding: 0.25rem 0.5rem;
+  border: var(--site-line) solid transparent;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.site-lang__item--current {
+  border-color: var(--site-ink);
+  background: var(--site-ink);
+  color: var(--site-paper);
+}
+
+/*
  * The theme switch. static/site.js marks the document with data-site-js once it is running;
  * until then the button would do nothing, so it is not shown at all. Without JavaScript a
  * reader therefore sees the light default and no dead control (ADR-0004).

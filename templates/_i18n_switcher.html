@@ -1,0 +1,41 @@
+{#-
+  The language switcher (ticket 23). Exactly one link: to the same page in the other language.
+
+  `translations` is always defined but may be empty. It is populated for pages that have a
+  counterpart — each entry is {lang, url}, the current language included, and the url already
+  carries the /zh prefix (measured: /usage and /zh/usage both report
+  [{en,/usage},{zh,/zh/usage}]) — so it is the source of truth.
+
+  Exception, measured: seite does NOT populate translations for a collection index (/components/
+  and /zh/components/ both report []), even though content/components/index.zh.md exists. Those
+  pages are recognised by page.slug == page.collection ("components"/"components"; a component
+  page is "button"/"components", a plain page "usage"/"pages"), and their counterpart URL is
+  derived from page.url — the only place in the site where a URL is computed rather than read.
+  scripts/verify-i18n.mjs asserts that every switcher target exists in dist/.
+
+  A page with no counterpart gets no switcher at all, not an empty box: the group is inside the
+  `if`, because `.site-lang` draws a border and a background. That is the 404 pages, today.
+
+  Tera note: Tera has no ternary operator, hence set_global + if.
+-#}
+{%- set_global other = "en" -%}
+{%- if lang == "en" %}{% set_global other = "zh" %}{% endif -%}
+{%- set_global other_url = "" -%}
+{%- for translation in translations -%}
+{%- if translation.lang == other %}{% set_global other_url = translation.url %}{% endif -%}
+{%- endfor -%}
+{%- if other_url == "" and page.slug == page.collection -%}
+{%- if lang == "en" %}{% set_global other_url = "/zh" ~ page.url %}{% else %}{% set_global other_url = page.url | replace(from="/zh", to="") %}{% endif -%}
+{%- endif -%}
+{%- if other_url != "" -%}
+<div class="site-lang" role="group" aria-label="{{ data.i18n[lang].lang_switch_label }}">
+{%- if lang == "en" %}
+    {# The two language names are each language's own name, so they are written here, not in data/. #}
+    <span class="site-lang__item site-lang__item--current" lang="en" aria-current="page">English</span>
+    <a class="site-lang__item" href="{{ site.base_url }}{{ other_url }}" hreflang="zh" lang="zh" title="{{ data.i18n[lang].lang_switch_title }}">中文</a>
+{%- else %}
+    <a class="site-lang__item" href="{{ site.base_url }}{{ other_url }}" hreflang="en" lang="en" title="{{ data.i18n[lang].lang_switch_title }}">English</a>
+    <span class="site-lang__item site-lang__item--current" lang="zh" aria-current="page">中文</span>
+{%- endif %}
+</div>
+{%- endif %}

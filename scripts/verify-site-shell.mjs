@@ -201,7 +201,8 @@ function shellInventory() {
   const slugs = (dir) =>
     fs
       .readdirSync(abs(dir))
-      .filter((file) => file.endsWith('.md') && file !== 'index.md')
+      // `.zh.md` is the generated Chinese twin of an English page, not a page of its own (ticket 23).
+      .filter((file) => file.endsWith('.md') && file !== 'index.md' && !file.endsWith('.zh.md'))
       .map((file) => file.slice(0, -3));
 
   for (const slug of slugs('content/components')) pages.set(`components/${slug}.html`, 'component');
@@ -209,6 +210,8 @@ function shellInventory() {
   pages.set('index.html', 'none');
   pages.set('components/index.html', 'none');
   pages.set('404.html', 'seite-404');
+  // Ticket 23: every English page has a Chinese twin under /zh/ with the same shell.
+  for (const [file, kind] of [...pages]) pages.set(`zh/${file}`, kind);
   return pages;
 }
 

@@ -1,0 +1,59 @@
+# Every string the site chrome and the client-side demo layer need, per language.
+#
+# Why a data file and not template conditionals: seite exposes data/*.yaml as `data` in every
+# template (measured; the shortcode context does NOT get it, but page templates do), and Tera can
+# index it with a variable key — so `data.i18n[lang].preview` works and one template serves both
+# languages. scripts/verify-i18n.mjs asserts that en and zh have exactly the same keys.
+#
+# Rules: class names, attribute names, token names, element names and commands are never translated;
+# the two language names in the switcher are each language's own name and live in
+# templates/_i18n_switcher.html, not here.
+en:
+  skip: "Skip to content"
+  nav_main: "Main"
+  nav_usage: "Usage"
+  nav_customizing: "Customizing"
+  nav_components: "Components"
+  theme_toggle: "Dark mode"
+  lang_switch_label: "Language"
+  lang_switch_title: "Read this page in Chinese"
+  home_tagline: "a semantic-first Neubrutalism CSS library"
+  example_heading: "Example"
+  breadcrumb_label: "Breadcrumb"
+  pager_label: "Components"
+  empty_components: "No component pages yet."
+  footer_license: "MIT licensed."
+  footer_source: "Source"
+  footer_built: "Built from <code>src/</code> with esbuild, published from <code>static/</code>."
+  preview: "Preview"
+  code: "Code"
+  copy: "Copy"
+  copied: "Copied!"
+  copy_aria: "Copy code to clipboard"
+  collections:
+    components: "Components"
+
+zh:
+  skip: "跳到正文"
+  nav_main: "主导航"
+  nav_usage: "使用方式"
+  nav_customizing: "自定义主题"
+  nav_components: "组件"
+  theme_toggle: "深色模式"
+  lang_switch_label: "语言"
+  lang_switch_title: "以英文阅读本页"
+  home_tagline: "一套语义优先的 Neubrutalism CSS 库"
+  example_heading: "示例"
+  breadcrumb_label: "面包屑导航"
+  pager_label: "组件"
+  empty_components: "还没有组件页。"
+  footer_license: "MIT 许可。"
+  footer_source: "源码"
+  footer_built: "用 esbuild 从 <code>src/</code> 构建，从 <code>static/</code> 发布。"
+  preview: "预览"
+  code: "代码"
+  copy: "复制"
+  copied: "已复制"
+  copy_aria: "复制代码"
+  collections:
+    components: "组件"

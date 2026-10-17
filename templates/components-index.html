@@ -1,7 +1,12 @@
 {% extends "base.html" %}
 {% block title %}{{ page.title }} — {{ site.title }}{% endblock %}
 {% block content %}
-{% set base = site.base_url ~ lang_prefix %}
+{#
+  `items[].url` already carries the language prefix on the Chinese index
+  ("url":"/zh/components/button"), so only site.base_url is prepended here — see the same note in
+  templates/index.html.
+#}
+{% set base = site.base_url %}
 <!-- template: templates/components-index.html -->
 {#
   The index is laid out by the library's own grid (ticket 17): every page of this site consumes
@@ -51,7 +56,7 @@
 {% else %}
 <div class="bn-row">
   <div class="bn-col-12" data-site-column="empty">
-    <p class="site-empty">No component pages yet — they arrive with tickets 10–22.</p>
+    <p class="site-empty">{{ data.i18n[lang].empty_components }}</p>
   </div>
 </div>
 {% endif %}
