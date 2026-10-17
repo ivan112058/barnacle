@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node --test tests/js/base.test.mjs tests/js/tabs.test.mjs tests/js/toast.test.mjs tests/js/dropdown.test.mjs",
+    "test": "node --test tests/js/base.test.mjs tests/js/tabs.test.mjs tests/js/toast.test.mjs tests/js/dropdown.test.mjs tests/js/taginput.test.mjs",
     "test:browser": "node --test --test-force-exit --test-concurrency=2 tests/browser/",
     "test:browser:mutations": "node tests/browser/mutation-sweep.mjs",
     "verify": "node scripts/verify.mjs",
@@ -22,6 +22,7 @@
     "verify:toast": "node scripts/verify-toast.mjs",
     "verify:tabs": "node scripts/verify-tabs.mjs",
     "verify:dropdown": "node scripts/verify-dropdown.mjs",
+    "verify:taginput": "node scripts/verify-taginput.mjs",
     "verify:interaction": "node scripts/verify-interaction.mjs",
     "verify:static": "node scripts/verify-static.mjs",
     "verify:table": "node scripts/verify-table.mjs",

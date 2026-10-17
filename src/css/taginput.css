@@ -1,1 +1,205 @@
-/* taginput.css — filled by ticket 21 (layer: components) */
+/* taginput.css — `<bn-taginput>`, the field that holds its own tags.
+ * (layer: components, assigned by CSS_MANIFEST in scripts/build.mjs — this file writes no @layer.)
+ *
+ * The element is shallow DOM (ADR-0002): the script inserts one `.bn-badge.bn-tag` per tag before
+ * the `<input>` the author wrote, and everything here dresses that authored subtree. Three
+ * decisions, and each one is the reason this file is short.
+ *
+ *   1. **The field is a Form field.** It is a text control that happens to hold chips, so it reads
+ *      the same tokens and the same box as `form.css`'s text inputs — the structural frame at
+ *      `--bn-border-width`, `--bn-radius` (square by default), the secondary surface and the
+ *      small shadow tier, on the button's 2.5rem floor — rather than starting a second set of
+ *      numbers. The tier is a slot (`--_shadow-rest`), so a hover climbs to md exactly as a
+ *      text field's does, and a press is absent for the same reason: a field is a typing target,
+ *      not a button (spec §7, ADR-0003).
+ *   2. **The chip is a badge.** The visual form of a tag is `badge.css`'s, through the class the
+ *      script puts on the chip; this file adds only what a *removable* chip needs — it does not
+ *      shrink, it may wrap instead of overflowing the field, and its remove button is a small
+ *      square that inherits the chip's ink and takes no interaction geometry of its own.
+ *   3. **State changes a colour, never a box.** Hover moves the shadow tier; focus recolours the
+ *      frame; disabled falls back to the page's ground. No rule here writes a border width, a
+ *      padding or a size, so removing a tag cannot move the frame (spec §3 invariant 7) — and the
+ *      remove button zeroes its lift/press slots instead of cancelling a transform, so the whole
+ *      library still has exactly one displacement source.
+ *
+ * The focus ring is the base layer's, on whichever control has focus: the input keeps its own ring
+ * and so do the remove buttons. Drawing a second ring on the container would mean suppressing the
+ * input's, and this library never removes a focus indicator (spec §7, WCAG F78) — the frame's
+ * accent colour on `:focus-within` is an extra cue, not a replacement.
+ *
+ * No colour literal, no declaration marked as important, no `@layer`, no `translate()`: the
+ * geometry lives in `00-base.css` and the colours in `01-theme.css`.
+ */
+
+/* ==============================================================================================
+ * 1. The field box — the same box as a text input, wrapping.
+ * ============================================================================================ */
+bn-taginput {
+  --_shadow-rest: var(--bn-shadow-sm);
+  --_surface: var(--bn-secondary-background);
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  align-content: center;
+  gap: 0.5rem;                            /* 8px — wider than the chip's 2px shadow */
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: 2.5rem;                 /* 40px — the floor a Form field and a button share */
+  padding: 0.375rem 0.5rem;               /* 6px 8px — a chip's box is a proportion, not a token */
+
+  /* The structural box, stated once. Nothing below changes a width or a padding. */
+  border-style: solid;
+  border-width: var(--bn-border-width);
+  border-color: var(--_border-rest);
+  border-radius: var(--bn-radius);
+
+  background: var(--_surface);
+  box-shadow: var(--_shadow-rest);
+  color: var(--bn-foreground);
+
+  font-family: var(--bn-font-family);
+  font-size: 1rem;
+  font-weight: var(--bn-font-weight-base);
+  line-height: 1.5;
+
+  cursor: text;                           /* the whole field is the typing target */
+}
+
+/* Hover: the shadow climbs one tier while the field itself stays put — the text-control rule, not
+   the button's lift (a field that moved under the caret would be a usability error). Guarded by
+   (hover: hover) so a touch device cannot stick in the raised state it got by tapping. */
+@media (hover: hover) {
+  bn-taginput:not([disabled]):hover {
+    --_shadow-rest: var(--bn-shadow-md);
+  }
+}
+
+/* Focus within the field: the frame takes the accent colour, so the whole control reads as active
+   while the ring itself stays on the focused child (see the file comment). Colour only. */
+bn-taginput:focus-within {
+  --_border-rest: var(--bn-main);
+}
+
+/* Disabled: the surface falls back to the page's own ground and the control stops answering, while
+   the frame and the text keep their contrast. The script disables the field and every chip's
+   button, so the pointer is barred in the interaction layer too. */
+bn-taginput[disabled] {
+  --_surface: var(--bn-background);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* The frame and the tier cross-fade only where the visitor accepts motion (spec §7). With reduced
+   motion the transition is never declared, so the change arrives at once. */
+@media (prefers-reduced-motion: no-preference) {
+  bn-taginput {
+    transition:
+      background-color var(--_motion),
+      border-color var(--_motion),
+      box-shadow var(--_motion);
+  }
+}
+
+/* ==============================================================================================
+ * 2. The entry field inside the box.
+ *
+ *    The author's `<input>` is dressed by form.css like every other text field — border, surface,
+ *    shadow, 40px floor. Inside a tag field all of that would be a box within a box, so it is
+ *    stripped back to type and caret: no frame, no surface, no shadow, no height floor. It stays
+ *    the same element the author wrote, in the same place in the tree, so the platform's editing
+ *    behaviour (caret, selection, IME, autofill) is untouched.
+ * ============================================================================================ */
+bn-taginput > input:not([type="hidden"], [type="checkbox"], [type="radio"]) {
+  flex: 1 1 6rem;                         /* the field keeps a usable width and grows last */
+  inline-size: auto;
+  min-inline-size: 6rem;
+  min-block-size: 0;
+  margin: 0;
+  padding: 0.25rem;                       /* 4px — room for the focus ring around the glyphs */
+
+  border: 0;
+  border-radius: var(--bn-radius);
+  background: none;
+  box-shadow: none;
+  color: var(--bn-foreground);
+
+  font: inherit;
+  line-height: 1.5;
+}
+
+/* A chip and the ring of the focused field need room between them, so the entry steps away from
+   the chip before it whenever chips precede it. Without this the ring would be painted over the
+   last chip's frame — the ring is drawn outside the input's box, into the gap. */
+bn-taginput > input:not(:first-child) {
+  margin-inline-start: 0.25rem;
+}
+
+/* The ring sits tighter than the library default, as it does on every Form control: a field's
+   padding is smaller than a card's, and the entry field is only one flex item wide inside a field
+   that already has a frame. The tighter offset is the only number here, and it is the ring's own
+   geometry (spec §7 fixes the ring thickness literally); the ring stays the base layer's outline,
+   never a replacement for it. */
+bn-taginput > input:focus-visible {
+  outline-offset: 2px;
+}
+
+/* ==============================================================================================
+ * 3. The chips — badges with a remove button.
+ *
+ *    The visual form is badge.css's (the script gives each chip `.bn-badge` plus
+ *    `data-variant="secondary"`), so this file touches nothing about its colours, its frame, its
+ *    padding or its shadow tier. Two things are specific to a chip that can be removed:
+ *
+ *      - it does not shrink as the field grows, and it wraps its text instead of pushing the
+ *        field out of its column when someone enters a very long tag;
+ *      - its remove button is a 1rem square that inherits the chip's ink — the accent's ink when
+ *        the chip is filled, the page's ink otherwise, in both themes — and it carries no
+ *        interaction geometry of its own, so a chip never lifts or grows a shadow.
+ * ============================================================================================ */
+bn-taginput .bn-tag {
+  flex: none;
+  max-inline-size: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+bn-taginput .bn-tag > .bn-taginput-remove {
+  /* The shared geometry, zeroed in the only way the library allows: re-point the slots, never
+     cancel a transform. A button inside a chip is a glyph, not an object that floats. */
+  --_lift-x: 0;
+  --_lift-y: 0;
+  --_press-x: 0;
+  --_press-y: 0;
+  --_shadow-rest: none;
+  --_shadow-hover: none;
+  --_shadow-press: none;
+
+  display: inline-grid;
+  place-content: center;
+  inline-size: 1rem;                      /* 16px — the glyph's box, one line tall */
+  block-size: 1rem;
+  min-block-size: 0;
+  padding: 0;
+
+  border: 0;
+  border-radius: var(--bn-radius);
+  background: none;
+  box-shadow: none;
+  color: inherit;
+
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* A disabled chip's button is disabled by the script, so the pointer says so as well. */
+bn-taginput[disabled] .bn-taginput-remove {
+  cursor: not-allowed;
+}
+
+/* A remove button lives inside a chip, so its ring is drawn at the tightest offset the ring rule
+   accepts: at the library's 3px the ring would cross the chip's own frame. */
+bn-taginput .bn-taginput-remove:focus-visible {
+  outline-offset: 2px;
+}

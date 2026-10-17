@@ -601,6 +601,363 @@
     }
   };
 
+  // src/js/taginput.js
+  var TAG_DELIMITER = ",";
+  var TAG_CLASS = "bn-tag";
+  var REMOVE_CLASS = "bn-taginput-remove";
+  var BADGE_CLASS = "bn-badge";
+  function normaliseTags(value) {
+    const list = value == null ? [] : Array.isArray(value) ? value : [value];
+    const seen = /* @__PURE__ */ new Set();
+    const tags = [];
+    for (const item of list) {
+      const text = item == null ? "" : String(item);
+      for (const part of text.split(TAG_DELIMITER)) {
+        const tag = part.trim();
+        if (tag === "" || seen.has(tag)) continue;
+        seen.add(tag);
+        tags.push(tag);
+      }
+    }
+    return tags;
+  }
+  var BnTagInput = class extends BnBase {
+    /* ------------------------------------ state ------------------------------------ */
+    /** The tags, in order. The single source of truth; `null` until `init()` reads the markup. */
+    _tags = null;
+    /** `true` once the authored list has been read, so a reconnect never re-reads stale markup. */
+    _tagsRead = false;
+    /** The authored entry field, or `null` while the element is not enhanced. */
+    _input = null;
+    /** The input's authored `value`, restored on teardown. */
+    _authoredInputValue = "";
+    /** Whether the author had disabled the input themselves, so teardown can tell it apart. */
+    _authoredInputDisabled = false;
+    /* ---------------------------------- subclass contract --------------------------------- */
+    /** `disabled` is the one attribute the element observes: the field and the chips follow it. */
+    static get observedAttributes() {
+      return ["disabled"];
+    }
+    /** A `disabled` toggled from script reaches the field and every chip's button. */
+    attributeChangedCallback() {
+      this._applyDisabled();
+    }
+    /** `click` removes a chip, `keydown` owns the field keys, `input` parses a pasted list. */
+    events() {
+      return ["click", "keydown", "input"];
+    }
+    /**
+     * Enhances the authored subtree, or returns quietly when there is nothing to enhance. Idempotent:
+     * every step writes what follows from `_tags`, so a second run changes nothing.
+     */
+    init() {
+      const input = this.querySelector("input");
+      if (!input) return;
+      this._input = input;
+      this._authoredInputDisabled = input.hasAttribute("disabled");
+      this._authoredInputValue = input.getAttribute("value") ?? "";
+      if (!this._tagsRead) {
+        const authored = this.getAttribute("value");
+        this._tags = normaliseTags(authored ?? input.value);
+        this._tagsRead = true;
+      }
+      this._render();
+      this._applyDisabled();
+      this._input.value = "";
+      this._reflect();
+    }
+    /**
+     * Undoes `init()`: the chips this element created are removed and the entry field is put back
+     * the way the author wrote it. The tag list itself is kept, so moving the element in the DOM
+     * does not lose what the visitor typed.
+     */
+    teardown() {
+      for (const chip of this.chips()) chip.parentNode?.removeChild(chip);
+      if (this._input) {
+        this._input.value = this._authoredInputValue;
+        if (this._authoredInputDisabled) this._input.setAttribute("disabled", "");
+        else this._input.removeAttribute("disabled");
+      }
+      this._input = null;
+    }
+    /* --------------------------------------- the API -------------------------------------- */
+    /**
+     * The current tags, in order.
+     *
+     * @returns {string[]} a copy — mutating it cannot change the component.
+     */
+    tags() {
+      return [...this._tags ?? []];
+    }
+    /**
+     * Replaces the whole tag set. Idempotent: writing the set the component already holds changes
+     * nothing, renders nothing and announces nothing.
+     *
+     * @param {string[]|string} value the new set; a comma-joined string is accepted too.
+     * @returns {string[]} the set actually held afterwards.
+     */
+    setTags(value) {
+      return this._commit(normaliseTags(value), "api");
+    }
+    /**
+     * Appends one value (or a comma-joined list). A duplicate, an empty value or pure whitespace is
+     * ignored, so calling it twice with the same text is the same as calling it once.
+     *
+     * @param {unknown} value
+     * @returns {string[]} the set actually held afterwards.
+     */
+    addTag(value) {
+      return this._commit(normaliseTags([...this._tags ?? [], value]), "api");
+    }
+    /**
+     * Removes the tag at `index` (0-based). An out-of-range index is a quiet no-op.
+     *
+     * @param {number} index
+     * @returns {string[]} the set actually held afterwards.
+     */
+    removeTagAt(index) {
+      if (!Number.isInteger(index) || index < 0 || index >= (this._tags?.length ?? 0)) return this.tags();
+      return this._commit(this._tags.filter((_, position) => position !== index), "api");
+    }
+    /** Empties the tag set. Writing an empty set is a no-op when it is already empty. */
+    clearTags() {
+      return this._commit([], "api");
+    }
+    /* ------------------------------------ the chips --------------------------------------- */
+    /** Every chip this element manages, in document order. */
+    chips() {
+      return [...this.querySelectorAll(`.${TAG_CLASS}`)];
+    }
+    /** The remove buttons of those chips, in the same order. */
+    removeButtons() {
+      return this.chips().map((chip) => chip.querySelector(`.${REMOVE_CLASS}`)).filter(Boolean);
+    }
+    /** The chip a node belongs to, or `null` when it is not inside one. */
+    chipFrom(node) {
+      const chips = this.chips();
+      let current = node ?? null;
+      while (current && current !== this) {
+        if (chips.includes(current)) return current;
+        current = current.parentNode ?? null;
+      }
+      return null;
+    }
+    /* ------------------------------------ rendering --------------------------------------- */
+    /**
+     * Rebuilds the chips from `_tags`. Focus is preserved where it still makes sense: a remove
+     * button that was just removed hands the caret back to the entry field, and a visitor typing in
+     * the field keeps typing.
+     */
+    _render() {
+      if (!this._input) return;
+      const active = globalThis.document?.activeElement ?? null;
+      const activeChip = this.chipFrom(active);
+      for (const chip of this.chips()) chip.parentNode?.removeChild(chip);
+      for (const tag of this._tags ?? []) this._insertChip(tag);
+      if (activeChip && !this.chipFrom(active)) this._input.focus();
+    }
+    /** One chip: the badge's visual, a text node, and a named remove button. */
+    _insertChip(tag) {
+      const chip = globalThis.document.createElement("span");
+      chip.className = `${BADGE_CLASS} ${TAG_CLASS}`;
+      chip.setAttribute("data-variant", "secondary");
+      const label = globalThis.document.createTextNode(tag);
+      const remove = globalThis.document.createElement("button");
+      remove.setAttribute("type", "button");
+      remove.className = REMOVE_CLASS;
+      remove.setAttribute("aria-label", `Remove ${tag}`);
+      remove.textContent = "\xD7";
+      if (this.hasAttribute("disabled")) remove.setAttribute("disabled", "");
+      chip.append(label, remove);
+      const parent = this._input.parentNode ?? this;
+      parent.insertBefore(chip, this._input);
+      return chip;
+    }
+    /** Publishes the current list into the `value` attribute, so it is inspectable from markup. */
+    _reflect() {
+      this.setAttribute("value", (this._tags ?? []).join(", "));
+    }
+    /* ------------------------------------ the keys ---------------------------------------- */
+    /**
+     * The keyboard entry point. The base class's navigation family (arrows / Home / End) is handled
+     * by `keydown()` first, so the index arithmetic stays in keys.js; the component keys — `Enter`,
+     * the delimiter and `Backspace` — are handled here because `BnBase.onKeydown` only fields the
+     * navigation keys (spec §9: a component decides what its own keys mean).
+     *
+     * @param {KeyboardEvent} event
+     * @returns {boolean} `true` when the component used the key (the base class then prevents the
+     *   browser default, which is how `Enter` stops submitting the form and `Backspace` stops
+     *   navigating back).
+     */
+    onKeydown(event) {
+      if (super.onKeydown(event)) return true;
+      return this._handleKey(event);
+    }
+    /** The three component keys, and the remove button's own Delete/Backspace. */
+    _handleKey(event) {
+      const input = this._input;
+      if (!input) return false;
+      const { key } = event;
+      const target = event.target ?? null;
+      const button = this._removeButtonFrom(target);
+      if (button) {
+        if (key !== "Delete" && key !== "Backspace") return false;
+        const index = this.removeButtons().indexOf(button);
+        if (index < 0) return false;
+        if (typeof event.preventDefault === "function") event.preventDefault();
+        this._removeAt(index, "remove");
+        return true;
+      }
+      if (target !== input) return false;
+      if (key === "Enter") {
+        if (input.value.trim() === "") return false;
+        if (typeof event.preventDefault === "function") event.preventDefault();
+        this._commitField();
+        return true;
+      }
+      if (key === TAG_DELIMITER) {
+        if (typeof event.preventDefault === "function") event.preventDefault();
+        this._commitField();
+        return true;
+      }
+      if (key === "Backspace" && input.value === "") {
+        if ((this._tags?.length ?? 0) === 0) return false;
+        if (typeof event.preventDefault === "function") event.preventDefault();
+        this._removeAt(this._tags.length - 1, "backspace");
+        return true;
+      }
+      return false;
+    }
+    /**
+     * The arrow / Home / End ring: the remove buttons in order, plus the entry field as the last
+     * stop. From an empty field, `ArrowLeft` steps back into the chips (so a keyboard user can walk
+     * in without a mouse); from a field that holds text the arrow keeps its caret meaning.
+     *
+     * @param {string} key
+     * @param {KeyboardEvent} event
+     * @returns {boolean} `true` when focus moved.
+     */
+    keydown(key, event) {
+      const input = this._input;
+      if (!input) return false;
+      const buttons = this.removeButtons();
+      const target = event?.target ?? null;
+      const button = this._removeButtonFrom(target);
+      if (button) {
+        const index = buttons.indexOf(button);
+        if (index < 0) return false;
+        if (key === "ArrowRight" && index === buttons.length - 1) {
+          input.focus();
+          return true;
+        }
+        const next = keydownIndex(key, index, buttons.length);
+        if (next < 0 || next === index) return false;
+        buttons[next].focus();
+        return true;
+      }
+      if (target === input) {
+        if (key !== "ArrowLeft" || input.value !== "") return false;
+        const last = buttons.length - 1;
+        if (last < 0) return false;
+        buttons[last].focus();
+        return true;
+      }
+      return false;
+    }
+    /* ------------------------------------ the clicks -------------------------------------- */
+    /**
+     * A click on a remove button takes that chip; a click on the field itself puts the caret back in
+     * the entry field; a click on a chip's label is inert (the chip is a label, not a control).
+     */
+    onClick(event) {
+      const button = this._removeButtonFrom(event?.target);
+      if (button) {
+        const index = this.removeButtons().indexOf(button);
+        if (index >= 0) this._removeAt(index, "remove");
+        return;
+      }
+      const input = this._input;
+      if (!input || this.hasAttribute("disabled")) return;
+      if (event?.target === input) return;
+      if (this.chipFrom(event?.target)) return;
+      input.focus();
+    }
+    /**
+     * A pasted list arrives as one `input` event. Everything up to the last delimiter is committed
+     * and only the unfinished tail stays in the field, so pasting `"One, Two"` adds `One` and leaves
+     * `Two` ready to be confirmed or extended.
+     */
+    onInput(event) {
+      const input = this._input;
+      if (!input || event?.target !== input) return;
+      if (!input.value.includes(TAG_DELIMITER)) return;
+      const parts = input.value.split(TAG_DELIMITER);
+      const pending = parts.pop() ?? "";
+      input.value = pending.trim();
+      this._commit(normaliseTags([...this._tags ?? [], ...parts]), "input");
+    }
+    /** Empties the field into the tag list: the draft is consumed, never kept. */
+    _commitField() {
+      const input = this._input;
+      if (!input) return;
+      const text = input.value;
+      input.value = "";
+      this._commit(normaliseTags([...this._tags ?? [], text]), "input");
+    }
+    /** The remove button a node belongs to, or `null`. The chip's label is not one. */
+    _removeButtonFrom(node) {
+      let current = node ?? null;
+      while (current && current !== this) {
+        if (current.nodeType === 1 && String(current.className ?? "").split(/\s+/).includes(REMOVE_CLASS)) {
+          return current;
+        }
+        current = current.parentNode ?? null;
+      }
+      return null;
+    }
+    /** Removes one tag by position, keeping the announcement's source honest. */
+    _removeAt(index, source) {
+      if (!Number.isInteger(index) || index < 0 || index >= (this._tags?.length ?? 0)) return;
+      this._commit(this._tags.filter((_, position) => position !== index), source);
+      if (source !== "api" && !this.hasAttribute("disabled")) this._input?.focus();
+    }
+    /* ---------------------------------- state changes ------------------------------------ */
+    /**
+     * The one write path: compares the incoming list with the held one, and only renders, reflects
+     * and announces when something actually changed. `added`/`removed` are computed against the
+     * previous list, so a listener can tell an add from a remove without diffing.
+     *
+     * @param {string[]} next
+     * @param {'input'|'remove'|'backspace'|'api'} source
+     * @returns {string[]} the set held afterwards.
+     */
+    _commit(next, source) {
+      const before = this._tags ?? [];
+      const same = next.length === before.length && next.every((tag, index) => tag === before[index]);
+      if (same) return this.tags();
+      const added = next.filter((tag) => !before.includes(tag));
+      const removed = before.filter((tag) => !next.includes(tag));
+      this._tags = next;
+      this._tagsRead = true;
+      this._render();
+      this._reflect();
+      this.emit("bn:change", { tags: [...next], added, removed, source });
+      return this.tags();
+    }
+    /** The chips are buttons too: a disabled field disables every control inside it. */
+    _applyDisabled() {
+      const disabled = this.hasAttribute("disabled");
+      if (this._input) {
+        if (disabled) this._input.setAttribute("disabled", "");
+        else if (!this._authoredInputDisabled) this._input.removeAttribute("disabled");
+      }
+      for (const button of this.removeButtons()) {
+        if (disabled) button.setAttribute("disabled", "");
+        else button.removeAttribute("disabled");
+      }
+    }
+  };
+
   // src/js/toast.js
   var DEFAULT_DURATION = 5e3;
   function parseTime(value) {
@@ -711,6 +1068,7 @@
   if (typeof customElements !== "undefined") {
     bn.register("bn-dropdown", BnDropdown);
     bn.register("bn-tabs", BnTabs);
+    bn.register("bn-taginput", BnTagInput);
   }
   var index_default = bn;
 })();
