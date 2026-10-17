@@ -157,3 +157,10 @@ input[role="switch"]:checked::before {
 - 本票不写 `label` 样式，文档示例里的 `<label for>` 现在只有 UA 的 inline 文字；第 4 节补上后示例会自动变好，不需要回改 switch。
 - 令牌/槽位：switch 只读 `--bn-border-width`、`--bn-border-color`、`--bn-radius`、`--bn-background`、`--bn-foreground`、`--bn-main`、`--bn-main-foreground`、`--bn-shadow-x`、`--bn-shadow-sm`、`--bn-transition`（经 `--_motion`），并声明了四个局部变量 `--_switch-h` / `--_switch-gap` / `--_switch-travel` / `--_switch-thumb`；第 2–5 节别复用这四个名字。
 
+## Comments
+
+- **12 号票（Form）落地后，本票 `verify-switch.mjs` 的一条负向对照被改写**（经协调代理授权，原始意图保留、未删除、未弱化为恒真）。它原本断言裸 `<input type="checkbox">` 仍是 UA 控件（`appearance: auto|checkbox`），用来证明「switch 的样式没有外泄」。spec §8 要求裸 checkbox/radio 成体系可用，form.css 第 3 节因此重绘它（`appearance: none`），该断言的**前提**过时，实测转红（`read appearance none`）。
+- 新断言仍以「角色才是锚点、第 1 节的几何不外泄」为准：裸 checkbox 是 form.css 第 3 节画的 20×20 方框，宽度/高度不等于 switch 的 40×28，其 `::before` 是静态（`position: static`）、无阴影的 mark，而不是 switch 那个绝对定位、带 sm 档阴影的 16px thumb。
+- 证伪（红/绿都跑过）：把第 1 节的 `input[role="switch"]::before` 临时改成也命中 `input[type="checkbox"]`，该断言转红（`mark position absolute`）；撤回并重建产物后恢复绿（21/21）。
+
+
