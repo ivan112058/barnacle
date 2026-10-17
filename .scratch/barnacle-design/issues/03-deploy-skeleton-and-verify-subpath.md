@@ -9,9 +9,9 @@
 - [x] `.github/workflows/deploy.yml` 采用 seite 自带的 GitHub Pages 工作流（`upload-pages-artifact@v3` + `deploy-pages@v4`）
 - [x] workflow 在 CI 中先跑构建链产出 `static/` 产物，再跑 `seite build`，最后上传 `dist/`
 - [x] `seite` 在 CI 中按固定版本（0.20.1）获取，与本地版本一致
-- [ ] GitHub Pages 的 Source 设为 "GitHub Actions"
-- [ ] `https://ivan112058.github.io/barnacle/` 可访问，首页正常渲染
-- [ ] 页面引用的 CSS 与 JS 全部返回 200，无一 404
+- [x] GitHub Pages 的 Source 设为 "GitHub Actions"
+- [x] `https://ivan112058.github.io/barnacle/` 可访问，首页正常渲染
+- [x] 页面引用的 CSS 与 JS 全部返回 200，无一 404
 - [x] 部署链路不依赖 `gh` CLI（本机未安装）
 
 **验证方式**
@@ -139,4 +139,19 @@ Resolved on the integration branch `feat/barnacle-v1` at commit b8d230f.
 Closing convention: this tracker has no "done" label, so `Status: resolved` plus the ticked checklist above records closure (see `docs/agents/issue-tracker.md`).
 Verify with: `npm run verify:deploy` (and, once the site is live, `npm run verify:release -- --live`)
 
-**Still unticked, and why**: the three live-deploy items — GitHub Pages' Source set to "GitHub Actions", `https://ivan112058.github.io/barnacle/` reachable, and every CSS/JS the page references answering 200 — stay `- [ ]`. Pages is not enabled for this repository yet, and this machine's git credential has no `workflow` scope, so GitHub rejected the push that carries `.github/workflows/deploy.yml`; the user will enable Pages and push `main` by hand. Once that is done, run `npm run verify:release -- --live` — its currently measured output is `GET https://ivan112058.github.io/barnacle/ → 404`.
+**Previously unticked, now closed**: the three live-deploy items — GitHub Pages' Source set to "GitHub Actions", `https://ivan112058.github.io/barnacle/` reachable, and every CSS/JS the page references answering 200 — are ticked above. Pages is enabled with `build_type: workflow`, the push carrying `.github/workflows/deploy.yml` succeeded, `GET https://ivan112058.github.io/barnacle/` answers 200, and `npm run verify:release -- --live` reports 23/23 PASS with 0 SKIP. The dated readings are in `## Live verification` below.
+
+## Live verification
+
+Measured after the site went live, at `main` = `20858ad400ac2a4f8df9b836f4a47b068d85bf61` (the same commit as `feat/barnacle-v1`), i.e. before this tracker-only closeout commit. Every reading below is measured, not inferred.
+
+- **Verification step 2 — the actual Pages Source value**: `GET /repos/ivan112058/barnacle/pages` returns `"build_type": "workflow"` and `"html_url": "https://ivan112058.github.io/barnacle/"`. The user set Settings → Pages → Build and deployment → Source to **GitHub Actions** in the UI.
+- **Homepage reachable**: `GET https://ivan112058.github.io/barnacle/` → **200**, 12352 B.
+- **Every CSS / JS asset 200, no 404**: BFS crawl from the homepage reached **46 pages (23 en + 23 zh) + 2 alias URL forms + 4 artifact links, with 0 × 404**. All assets answer 200 with the correct Content-Type: `barnacle.css` 162694 B, `barnacle.js` 45930 B, `site.js` 12189 B, `style.css` 18365 B, `favicon.svg` 309 B. The six `static/` files fetched back over HTTP are **byte-identical** to the repository copies.
+- **Run #5 green**: Actions run #5 on head `20858ad` — **build = success, deploy = success**.
+- **Why runs #1–#4 were red — the two-cause chain**:
+  1. *Pages not enabled.* On the first runs the repository had no Pages site (`has_pages: false`), so `actions/deploy-pages@v4` had nothing to deploy into. This is the setting-side half of the chain, fixed both by the user's UI switch and — for future clones — by the `configure-pages` step recorded below.
+  2. *The cross-platform spawn bug — run #4's failure.* `scripts/verify-release.mjs` and `scripts/verify-deploy.mjs` called `spawnSync('npm run build', { shell: platform === 'win32' })`. With `shell: false` on the Linux runner that looks for an executable literally named `npm run build` → **ENOENT**. Fixed in **`20858ad`** ("Spawn npm with an argument list so the release gate runs on the Linux runner") by passing an argument list instead: `spawnSync('npm', ['run', script], …)`.
+- **Self-sufficiency fix**: **`1d7c136`** ("Let the Pages workflow create the site on its first run") adds `actions/configure-pages@v5` with `enablement: true`, so a fresh clone can create its own Pages site on the first run. This repository's site ended up being enabled through the UI by the user, but the step now makes the workflow self-sufficient.
+- **The full gate on the real deployment**: `npm run verify:release -- --live` → **23/23 PASS, 0 SKIP**. Per-check readings (crawl counts, asset sizes, byte-identity, language switching, `hreflang`, per-page dark mode in real Chrome, README's three consumption routes including jsDelivr 4/4 and raw.githubusercontent 4/4) are recorded in ticket 24's `## Live verification`.
+

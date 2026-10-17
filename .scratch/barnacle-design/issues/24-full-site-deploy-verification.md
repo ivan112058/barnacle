@@ -6,13 +6,13 @@
 
 **Status:** resolved
 
-- [ ] 完整站点在 `https://ivan112058.github.io/barnacle/` 上可访问
-- [ ] 从首页出发，逐链接走通全部页面（中英各一遍），无死角 404
-- [ ] 全部资源（CSS、JS、字体、图片）在子路径下均返回 200
+- [x] 完整站点在 `https://ivan112058.github.io/barnacle/` 上可访问
+- [x] 从首页出发，逐链接走通全部页面（中英各一遍），无死角 404
+- [x] 全部资源（CSS、JS、字体、图片）在子路径下均返回 200
 - [x] 中英文页面互相切换正确，`hreflang` 情况与 23 号票的实测结论一致
-- [ ] 暗色模式在完整站点上逐页成立
+- [x] 暗色模式在完整站点上逐页成立
 - [x] `static/` 下的四份产物与当前源码一致（不是过期产物）
-- [ ] README 的消费方式（CDN / 原始下载 / 按需组合）逐条实测可用，CDN 链路指向 `main` 分支的 `static/` 路径
+- [x] README 的消费方式（CDN / 原始下载 / 按需组合）逐条实测可用，CDN 链路指向 `main` 分支的 `static/` 路径
 
 **验证方式**
 
@@ -153,3 +153,37 @@ Closing convention: this tracker has no "done" label, so `Status: resolved` plus
 Verify with: `npm run verify:release` (offline) and `npm run verify:release -- --live` (once the site is live)
 
 **Still unticked, and why**: the five live-site items — the complete site reachable at `https://ivan112058.github.io/barnacle/`, every link walked in both languages with no dead 404, every resource answering 200, dark mode per page on the real site, and README's CDN / raw-download links — stay `- [ ]`. Their offline equivalents pass and are recorded in the `## Answer` above (a 46-page crawl served under a local `/barnacle/` sub-path, 0 × 404, dark mode on all 46 pages, and the per-file composition route), but the real URL and the jsDelivr / raw mirrors are not verified yet: Pages is not enabled for this repository and this machine's git credential has no `workflow` scope, so the push of `.github/workflows/deploy.yml` was rejected by GitHub; the user will enable Pages and push `main` by hand. Once that is done, run `npm run verify:release -- --live` — its currently measured output is `GET https://ivan112058.github.io/barnacle/ → 404`.
+
+## Live verification
+
+上面 `## Answer` 与本节上方 `## Resolution` 的正文是**上线前**的快照，按约定原样保留；站已上线，本文所有「未验证」项均由本节关闭。测量点：`main` = `20858ad400ac2a4f8df9b836f4a47b068d85bf61`，即本次 tracker 收尾提交之前。
+
+### 一条命令，23/23 PASS，0 SKIP
+
+```powershell
+npm run verify:release -- --live
+```
+
+**结果：23/23 PASS，0 SKIP。** 没有任何一项退化成 `SKIP … the site is not published yet`；原先报红的两类（站点 404、镜像 404）现在是实测通过。
+
+### 逐项读数
+
+| ticket 勾选项 | 线上实测（命令 → 读数） |
+|---|---|
+| 完整站点可访问 | `PASS the site is published at https://ivan112058.github.io/barnacle/`；`GET https://ivan112058.github.io/barnacle/` → **200**，12352 B |
+| 逐链接走通（中英各一遍），无死角 404 | 从首页 BFS 爬取：**46 个页面（23 en + 23 zh）+ 2 个别名 URL 形式 + 4 个产物直链，0 × 404**；页面集合 46 == `dist/` 的 HTML 集合 |
+| 全部资源返回 200 | `barnacle.css` **162694 B**、`barnacle.js` **45930 B**、`site.js` **12189 B**、`style.css` **18365 B**、`favicon.svg` **309 B** —— 全部 200 且 Content-Type 正确；六个 `static/` 文件经 HTTP 取回与仓库**逐字节相同** |
+| 语言切换与 `hreflang` | 46 页每页 1 个切换链接指向**本页的对端**、双向可达；46 页各 **3 条** alternates（en / zh / x-default），全部指向已发布页面；`<html lang>` 与 URL 语言一致 —— 与 23 号票结论一致 |
+| 暗色逐页成立 | 真 Chrome 155.0.8059.82，**46 页逐页**通过：body `rgb(26,26,26)`、`--bn-foreground` → `rgb(255,253,245)`、`--bn-shadow-md` → `rgb(255,253,245) 4px 4px 0px 0px`；**0 console / page error** |
+| README 三种消费方式 | ① 按需组合：20 个 `<link>` 与整份产物在 Chrome 里计算样式一致（明暗各一遍）；② jsDelivr `@main` **4/4 → 200**；③ raw.githubusercontent `main` **4/4 → 200** —— 八个 URL 的字节均与仓库 `static/` 产物一致 |
+
+上线过程本身修掉的两处真实缺陷记在 03 号票的 `## Live verification`（run #4 的 Linux `spawnSync` bug = `20858ad`；`configure-pages` 自举 = `1d7c136`）。
+
+### 复验命令
+
+```powershell
+npm run verify:release -- --live
+# 期望：23/23 PASS，0 SKIP。站点或镜像再次不可用时以 FAIL 报出，不会伪装成 SKIP。
+```
+
+离线那一半仍是 `npm run verify:release`（不需要网络）。
