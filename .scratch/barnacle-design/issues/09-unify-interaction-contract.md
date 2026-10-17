@@ -50,7 +50,7 @@
 | `scripts/verify-interaction.mjs` | 新增，`npm run verify:interaction`，15 项断言（12 静态 + 3 浏览器） |
 | `scripts/build.mjs` | 新增导出 `layerBlock(source)`，`concatenateLayerBlocks` 改用它；审计用构建链自己的 helper 拼产物，不复制一份布局逻辑 |
 | `package.json` | 只加 `verify:interaction` 一行 |
-| `static/*` | 重新 `npm run build`（只有 `barnacle.css` 因注释增加而变；`barnacle.min.css` 注释被压掉，**字节不变**） |
+| `static/*` | 重新 `npm run build`：只有 `barnacle.css` 变（+31/−8，全是新注释）；`barnacle.min.css`、`barnacle.js`、`barnacle.min.js` **逐字节不变**（注释被压掉 / 与该文件无关） |
 
 **未改**：`button.css`、`tabs.css`、`dropdown.css`、`toast.css`、`animations.css`、其它组件文件、`tests/browser/*`、既有 `scripts/verify*.mjs`、`src/js/*`。Button 的外观与交互因此**逐字节/逐计算值不变**（见下方证据）。
 
