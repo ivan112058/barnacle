@@ -1,1 +1,81 @@
-/* skeleton.css — filled by ticket 10 (layer: components) */
+/* skeleton.css — the loading placeholder: the same anchor as the spinner, the opposite shape.
+ * (layer: components, assigned by CSS_MANIFEST in scripts/build.mjs — this file writes no @layer.)
+ *
+ * Spec §8 gives both Spinner and Skeleton the anchor `[role="status"]`, and the two files have to
+ * disagree about what that anchor looks like. Orchestrator decision §3C settles it: a bare
+ * `[role="status"]` is the spinner (spinner.css), and **`.bn-skeleton` overrides it**. The override
+ * is explicit in the other file (`:not(.bn-skeleton)`), not a consequence of this file coming later
+ * in the manifest, so the two cannot be swapped by an edit to scripts/build.mjs.
+ *
+ * The class is the anchor because there is no other way to say "this live region is a placeholder"
+ * (ADR-0001 reserves class names for exactly this case). Write both: `role="status"` is what puts
+ * the skeleton in the accessibility tree as a live region, `.bn-skeleton` is what makes it a
+ * placeholder instead of a ring.
+ *
+ * Four decisions.
+ *
+ *   1. A skeleton has no intrinsic size. It is a block with `min-block-size: 1em` and nothing else;
+ *      the author gives it a width and a height (an inline style in the docs' examples, a utility
+ *      class or a rule of their own in a real page). No `.bn-skeleton-w-*` scale is offered: spec §8
+ *      asks Utilities for a *bounded* set, and an unbounded width scale would be a second layout
+ *      system wearing the library's prefix.
+ *   2. The surface is `color-mix` of the page's ink into its second background, and the border is
+ *      the structural border. Both flip with the theme; nothing here is a literal, because `#eee`
+ *      on the dark background is an invisible placeholder.
+ *   3. The sheen is drawn unconditionally and *animated* inside `@media (prefers-reduced-motion:
+ *      no-preference)`. That is the spec §7 shape exactly: no reduce block, no rule that switches
+ *      motion off afterwards, and with motion reduced the placeholder is still a bordered block with
+ *      a frozen highlight — still recognisably a placeholder rather than an empty div.
+ *   4. The keyframes live here, not in animations.css: orchestrator §11 gives that file to the
+ *      Dialog ticket, and each component owns its own motion.
+ */
+
+/* ==============================================================================================
+ * 1. The placeholder — a block whose size is the author's to give.
+ * ============================================================================================ */
+.bn-skeleton {
+  --_shimmer: color-mix(in srgb, var(--bn-foreground) 12%, var(--bn-secondary-background));
+
+  display: block;
+  box-sizing: border-box;                /* the size an author gives is the size it occupies */
+  min-block-size: 1em;                   /* never a zero-height, invisible line */
+
+  border-style: solid;
+  border-width: var(--bn-border-width);
+  border-color: var(--bn-border-color);
+  border-radius: var(--bn-radius);
+
+  /* The frozen sheen: one soft highlight across the surface, drawn whether or not it is animated. */
+  background-color: var(--_shimmer);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--bn-foreground) 8%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+}
+
+/* Consecutive placeholders keep a rhythm, the way lines of text do. */
+.bn-skeleton + .bn-skeleton {
+  margin-block-start: 0.5rem;
+}
+
+/* ==============================================================================================
+ * 2. Motion — declared where the visitor accepts it, and nowhere else (spec §7).
+ * ============================================================================================ */
+@keyframes bn-shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .bn-skeleton {
+    animation: bn-shimmer 1.4s linear infinite;
+  }
+}

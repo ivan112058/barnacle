@@ -1,1 +1,121 @@
-/* badge.css — filled by ticket 10 (layer: components) */
+/* badge.css — the badge: a small label with no element of its own.
+ * (layer: components, assigned by CSS_MANIFEST in scripts/build.mjs — this file writes no @layer.)
+ *
+ * The badge is the case ADR-0001 reserves a class name for. A status chip, a count, a tag — HTML
+ * has no element for any of them, and the nearest candidates (`span`, `small`, `output`) all mean
+ * something else, so `.bn-badge` is the anchor (spec §8: "无语义元素可用，需类名").
+ *
+ * Four decisions.
+ *
+ *   1. A badge is a label, not a control. It sits in the sm shadow tier (ADR-0003: not every object
+ *      carries the same weight) and it never moves: §4.1's shared hover geometry does not list it,
+ *      and this file adds no state rule, so hovering a badge does nothing at all.
+ *   2. Meaning rides `data-variant` and reaches this file only as --_variant-color: no `--bn-success`
+ *      or `--bn-danger` appears below. A variant repaints the border *colour* and nothing else — no
+ *      padding, no width (spec §3 invariant 7), which is also why a size changes only the type.
+ *      `secondary` is the exception on purpose: it is a hierarchy, not a colour, so it gets a
+ *      quieter surface (a mix of the page's ink into its second background, so both themes work)
+ *      and keeps the page's own border and shadow.
+ *   3. Shape rides `bn-` class names: `.bn-solid` fills with the current colour, `.bn-outline`
+ *      trades the fill for coloured ink and border, `.bn-sm` / `.bn-lg` are the size axis button.css
+ *      opened (decision B says the two names are meant to be reused verbatim by later components).
+ *   4. A badge that carries a colour of its own paints its border and its shadow in that colour, by
+ *      the same mechanism as the card: the colour is republished as --bn-shadow-color and the sm
+ *      tier is re-derived from --bn-shadow-x/y, because the shadow token's own colour was baked in
+ *      on :root (orchestrator §8). The re-derivation is a copy of 01-theme.css's half-offset shape,
+ *      and scripts/verify-static.mjs keeps the two honest: a plain badge's shadow must stay
+ *      byte-identical to --bn-shadow-sm.
+ */
+
+/* ==============================================================================================
+ * 1. The shape — a small inline label.
+ * ============================================================================================ */
+.bn-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375em;
+  padding: 0.125em 0.5em;
+
+  font-family: var(--bn-font-family);
+  font-size: 0.8125rem;
+  font-weight: var(--bn-font-weight-heading);
+  line-height: 1.6;
+  white-space: nowrap;
+
+  background: var(--bn-secondary-background);
+  color: var(--bn-foreground);
+
+  /* Structural box, stated once: a variant changes the border colour and never a width. */
+  border-style: solid;
+  border-width: var(--bn-border-width);
+  border-color: var(--_variant-color, var(--bn-border-color));
+  border-radius: var(--bn-radius);
+
+  box-shadow: var(--bn-shadow-sm);       /* sm — a badge is a small object (ADR-0003) */
+}
+
+/* ==============================================================================================
+ * 2. Meaning — `data-variant`, spent only as --_variant-color.
+ * ============================================================================================ */
+
+/* secondary is a hierarchy rather than a colour (recipe §3, decision §1): one step quieter than the
+   page's own surface, mixed from the ink so it flips with the theme, and no colour channel at all
+   — its border and its shadow stay structural. */
+.bn-badge[data-variant="secondary"] {
+  background: color-mix(in srgb, var(--bn-foreground) 12%, var(--bn-secondary-background));
+}
+
+/* ==============================================================================================
+ * 3. Border and shadow, in one colour — the same mechanism as the card, one tier down.
+ * ============================================================================================ */
+.bn-badge:is([data-variant="success"], [data-variant="warning"], [data-variant="danger"], [data-variant="error"], .bn-pink, .bn-blue, .bn-green, .bn-orange, .bn-lavender) {
+  --bn-shadow-color: var(--_variant-color);
+  box-shadow: calc(var(--bn-shadow-x) / 2) calc(var(--bn-shadow-y) / 2) 0 0 var(--bn-shadow-color);
+}
+
+/* ==============================================================================================
+ * 4. Shape — `bn-` class names, orthogonal to the meaning axis.
+ * ============================================================================================ */
+
+/* Solid: the badge becomes a small filled slab in the current colour (the accent palette is bright
+   in both themes, so --bn-main-foreground stays legible on it — spec §6.2). With no variant at all
+   it falls back to --bn-main, never to the border colour, which would be a black label on a black
+   fill in the light theme. */
+.bn-badge.bn-solid {
+  background: var(--_variant-color, var(--bn-main));
+  color: var(--bn-main-foreground);
+}
+
+/* Outline: no fill, coloured ink and border. The neutral case matches `.bn-outline` on a button —
+   the page's own ink on the page's own border. */
+.bn-badge.bn-outline {
+  background: transparent;
+  color: var(--_variant-color, var(--bn-foreground));
+}
+
+/* Size axis (decision B: classes, and the middle size is the absence of one). Type and padding
+   only: a size may never touch the border box, or the grid reflows. */
+.bn-badge.bn-sm {
+  padding: 0.0625em 0.375em;
+  font-size: 0.75rem;
+}
+
+.bn-badge.bn-lg {
+  padding: 0.25em 0.625em;
+  font-size: 0.9375rem;
+}
+
+/* ==============================================================================================
+ * 5. A badge inside a link.
+ *
+ *    The one case where the badge takes the page's accent: tag lists are links, and a chip that
+ *    stayed its own colour inside a highlighted link would read as a separate object. Colour only,
+ *    and only on hover — the geometry is untouched, so nothing moves.
+ * ============================================================================================ */
+@media (hover: hover) {
+  a:hover > .bn-badge,
+  a:focus-visible > .bn-badge {
+    background: var(--bn-main);
+    color: var(--bn-main-foreground);
+  }
+}

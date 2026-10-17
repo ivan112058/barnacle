@@ -1,1 +1,98 @@
-/* alert.css — filled by ticket 10 (layer: components) */
+/* alert.css — the alert: a live region, dressed.
+ * (layer: components, assigned by CSS_MANIFEST in scripts/build.mjs — this file writes no @layer.)
+ *
+ * The anchor is `[role="alert"]` (spec §8). It is an ARIA role rather than an element because HTML
+ * has no element for "a message the visitor should be told about now", and because the role is what
+ * makes a screen reader announce the message when it appears. That makes the anchor global: the
+ * rule below dresses every live alert region in the document. The docs site carries none (checked by
+ * scripts/verify-static.mjs), and orchestrator §11 asks for exactly that check before a component
+ * styles a bare role.
+ *
+ * Four decisions.
+ *
+ *   1. The colour bar is the *inline-start* border, doubled, and it is set outside any state rule:
+ *      spec §3 invariant 7 forbids a state changing a border width, not a static asymmetry, and a
+ *      logical side means an RTL page needs no second rule. Everything else about the box is stated
+ *      once.
+ *   2. Meaning rides `data-variant` (spec §8), and only as --_variant-color: no `--bn-warning` or
+ *      `--bn-danger` appears below. An alert with no variant is the page's own ink on the page's own
+ *      border, indistinguishable from a mistyped variant name — the same rule the rest of the
+ *      library follows.
+ *   3. A variant colours the border *and* the shadow, by the mechanism the card documents: the
+ *      shadow tokens are substituted on :root with their colour already baked in (orchestrator §8),
+ *      so the sm tier is re-derived here from --bn-shadow-x/y with the colour taken from
+ *      --bn-shadow-color. The re-derivation is a copy of 01-theme.css's half-offset shape, and
+ *      scripts/verify-static.mjs holds the plain alert's shadow byte-identical to --bn-shadow-sm so
+ *      the copy cannot drift.
+ *   4. The entry is an animation, and it is declared inside `@media (prefers-reduced-motion:
+ *      no-preference)` — the reduced case is the absence of a rule, never a rule that switches
+ *      motion off afterwards (spec §7). The keyframes are the ones ticket 19 landed in
+ *      animations.css (`bn-fade-in-up`, marked reusable); the declaration has to live here because
+ *      animations.css belongs to ticket 14. `transform` is deliberately not what moves: the shared
+ *      geometry owns `transform`, and a `both`-filled animation pinning it would fight a hover
+ *      state. An alert by design only fades and rises, and it carries no hover state at all.
+ */
+
+/* ==============================================================================================
+ * 1. The shape — a bare role, no class required.
+ * ============================================================================================ */
+[role="alert"] {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+
+  background: var(--bn-secondary-background);
+  color: var(--bn-foreground);
+
+  /* Structural box, stated once: a variant changes the colour, never a width. */
+  border-style: solid;
+  border-width: var(--bn-border-width);
+  border-inline-start-width: calc(var(--bn-border-width) * 2);   /* the colour bar */
+  border-color: var(--_variant-color, var(--bn-border-color));
+  border-radius: var(--bn-radius);
+
+  box-shadow: var(--bn-shadow-sm);       /* sm — an alert is a notice, not an object to pick up */
+}
+
+/* The message owns its spacing, so the first and last block inside it add no stray margin. */
+[role="alert"] > :first-child {
+  margin-block-start: 0;
+}
+
+[role="alert"] > :last-child {
+  margin-block-end: 0;
+}
+
+/* ==============================================================================================
+ * 2. Meaning — `data-variant`, spent only as --_variant-color, and reaching the shadow too.
+ *
+ *    The colour bar, the border and the hard shadow are one colour, which is the property the
+ *    standalone --bn-shadow-color token exists for (spec §6.1). The semantic names already carry
+ *    --_variant-color from 01-theme.css; the five accents come from card.css's classes.
+ * ============================================================================================ */
+[role="alert"]:is([data-variant="success"], [data-variant="warning"], [data-variant="danger"], [data-variant="error"], .bn-pink, .bn-blue, .bn-green, .bn-orange, .bn-lavender) {
+  --bn-shadow-color: var(--_variant-color);
+  box-shadow: calc(var(--bn-shadow-x) / 2) calc(var(--bn-shadow-y) / 2) 0 0 var(--bn-shadow-color);
+}
+
+/* ==============================================================================================
+ * 3. Shape — `bn-` class names, orthogonal to the meaning axis.
+ *
+ *    `.bn-solid` is the loudest form: the whole notice is filled with the current colour and the ink
+ *    flips to --bn-main-foreground. With no variant it falls back to --bn-main rather than to the
+ *    border colour, which would be black ink on a black fill.
+ * ============================================================================================ */
+[role="alert"].bn-solid {
+  background: var(--_variant-color, var(--bn-main));
+  color: var(--bn-main-foreground);
+}
+
+/* ==============================================================================================
+ * 4. Arrival — declared only where the visitor has not asked for less motion (spec §7).
+ * ============================================================================================ */
+@media (prefers-reduced-motion: no-preference) {
+  [role="alert"] {
+    animation: bn-fade-in-up var(--_motion) both;
+  }
+}
