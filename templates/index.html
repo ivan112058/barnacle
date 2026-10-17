@@ -1,7 +1,13 @@
 {% extends "base.html" %}
-{% block title %}{{ site.title }} — a semantic-first Neubrutalism CSS library{% endblock %}
+{% block title %}{{ site.title }} — {{ data.i18n[lang].home_tagline }}{% endblock %}
 {% block content %}
-{% set base = site.base_url ~ lang_prefix %}
+{#
+  Card links come from `collections[].items[].url`, which seite already returns WITH the language
+  prefix on the /zh/ homepage (measured: "url":"/zh/components/button"), so the only prefix to add
+  is site.base_url. Adding lang_prefix as well — as this template used to — produced
+  /barnacle/zh/zh/components/button on every Chinese page.
+#}
+{% set base = site.base_url %}
 {#
   The homepage consumes the grid as well (ticket 17): the intro and every collection heading are
   full-width columns, and each collection's cards are four-column blocks — the same rhythm as
@@ -21,7 +27,8 @@
 <div class="bn-row">
   <div class="bn-col-12" data-site-column="collection-head">
     <section class="site-collection" aria-labelledby="collection-{{ collection.name }}">
-      <h2 id="collection-{{ collection.name }}">{{ collection.label }}</h2>
+      {# The collection's label is data/i18n.yaml's business; seite.toml's label is the English fallback. #}
+      <h2 id="collection-{{ collection.name }}">{{ data.i18n[lang].collections[collection.name] }}</h2>
     </section>
   </div>
   {% for item in collection.items %}

@@ -32,10 +32,26 @@
 (function () {
   'use strict';
 
+  /*
+   * Bilingual site (ticket 23): every visible word this script produces comes from the document,
+   * not from this file. templates/base.html puts the words on <html> as data-site-label-* and
+   * Tera escapes them, so a static file with no template still speaks the page's language — and
+   * nothing here has to know that "zh" exists. The English values are the fallbacks for a page
+   * built without the attributes.
+   */
+  var dataset = document.documentElement.dataset;
   var PREVIEW = 'preview';
   var CODE = 'code';
-  var LABELS = { preview: 'Preview', code: 'Code' };
+  var LABELS = {
+    preview: dataset.siteLabelPreview || 'Preview',
+    code: dataset.siteLabelCode || 'Code',
+    copy: dataset.siteLabelCopy || 'Copy',
+    copied: dataset.siteLabelCopied || 'Copied!',
+    copyAria: dataset.siteLabelCopyAria || 'Copy code to clipboard',
+  };
   var THEME_KEY = 'barnacle-site-theme';
+  /* seite's own Copy button text, which is hardcoded English in seite 0.20.1 (measured). */
+  var SEITE_COPY_TEXT = { Copy: LABELS.copy, 'Copied!': LABELS.copied };
 
   /**
    * Tags whose mere presence is not something a reader can look at. A fence that contains
@@ -233,6 +249,38 @@
     }
   }
 
+  /* ------------------------------------------------------------------- seite's Copy --- */
+
+  /**
+   * seite 0.20.1 injects a Copy button into every `<pre>` from an inline script whose text is
+   * hardcoded English ("Copy", "Copied!", aria-label "Copy code to clipboard"), and there is no
+   * setting for it. On a Chinese page that is the one word the site cannot otherwise translate,
+   * so it is renamed here.
+   *
+   * Ordering: seite's inline script sits at the end of <body> and runs while the document is still
+   * parsing, so its DOMContentLoaded handler is registered BEFORE this deferred file runs. This
+   * handler is registered afterwards and therefore runs after it, when the buttons exist. On an
+   * English page the mapping is a no-op (the two labels are already the English ones).
+   *
+   * The observer is what keeps "Copied!" → back-to-"Copy" (seite's own reset) in the page's
+   * language too. It re-reads the button's text and only rewrites the two strings seite uses, so
+   * setting our own label cannot re-trigger it.
+   */
+  function localizeCopyButtons() {
+    var buttons = document.querySelectorAll('.seite-copy-btn');
+    for (var i = 0; i < buttons.length; i += 1) {
+      (function (button) {
+        button.setAttribute('aria-label', LABELS.copyAria);
+        button.textContent = SEITE_COPY_TEXT[button.textContent] || LABELS.copy;
+        if (LABELS.copy === 'Copy') return; // English page: seite's own text is already right
+        new MutationObserver(function () {
+          var localised = SEITE_COPY_TEXT[button.textContent];
+          if (localised) button.textContent = localised;
+        }).observe(button, { childList: true, characterData: true, subtree: true });
+      }(buttons[i]));
+    }
+  }
+
   /* ------------------------------------------------------------------------- start --- */
 
   // Marks the capability for CSS: the theme switch is hidden until this script runs, so it is
@@ -249,4 +297,7 @@
   } else {
     init();
   }
+  // After seite's own handler, which is registered earlier (see localizeCopyButtons).
+  document.addEventListener('DOMContentLoaded', localizeCopyButtons);
+  if (document.readyState !== 'loading') localizeCopyButtons();
 })();

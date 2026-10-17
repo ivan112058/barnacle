@@ -1,10 +1,20 @@
 <!DOCTYPE html>
-<html lang="{{ lang }}">
+{#
+  Bilingual plumbing (ticket 23). `lang` is the language being rendered ("en" or "zh", measured:
+  `site.language` is the same value and is NOT the configured default; `default_language` is), and
+  it is the only thing the markup needs for `<html lang>`.
+
+  The data-site-label-* attributes are how static/site.js gets its words: it is a static file with
+  no template, so the strings are handed to it by the document. Tera escapes them, and the script
+  reads them back through element.dataset — no inline JSON, no script rewriting.
+#}
+<html lang="{{ lang }}" data-site-label-preview="{{ data.i18n[lang].preview }}" data-site-label-code="{{ data.i18n[lang].code }}" data-site-label-copy="{{ data.i18n[lang].copy }}" data-site-label-copied="{{ data.i18n[lang].copied }}" data-site-label-copy-aria="{{ data.i18n[lang].copy_aria }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}{{ site.title }}{% endblock %}</title>
 <meta name="description" content="{{ page.description | default(value=site.description) }}">
+{% include "_i18n_hreflang.html" %}
 <link rel="canonical" href="{{ site.base_url }}{{ page.url | default(value='/') }}">
 
 {#
@@ -37,21 +47,28 @@
 {% block head %}{% endblock %}
 </head>
 <body class="site-body">
-<a class="site-skip" href="#main">Skip to content</a>
+<a class="site-skip" href="#main">{{ data.i18n[lang].skip }}</a>
 
 <header class="site-header">
   <a class="site-brand" href="{{ site.base_url }}{{ lang_prefix }}/">{{ site.title }}</a>
-  <nav class="site-nav" aria-label="Main">
-    <a href="{{ site.base_url }}{{ lang_prefix }}/usage">Usage</a>
-    <a href="{{ site.base_url }}{{ lang_prefix }}/customizing">Customizing</a>
-    <a href="{{ site.base_url }}{{ lang_prefix }}/components/">Components</a>
+  <nav class="site-nav" aria-label="{{ data.i18n[lang].nav_main }}">
+    {#
+      The nav labels are per-language strings from data/i18n.yaml, but the URLs are the same in both
+      languages: the prefix is `lang_prefix` ("" for English, "/zh" for Chinese — measured). Do NOT
+      try to read a URL out of `items`/`page` and add the prefix to it again: seite already returns
+      those with the language prefix on a Chinese page (see templates/index.html).
+    #}
+    <a href="{{ site.base_url }}{{ lang_prefix }}/usage">{{ data.i18n[lang].nav_usage }}</a>
+    <a href="{{ site.base_url }}{{ lang_prefix }}/customizing">{{ data.i18n[lang].nav_customizing }}</a>
+    <a href="{{ site.base_url }}{{ lang_prefix }}/components/">{{ data.i18n[lang].nav_components }}</a>
+    {% include "_i18n_switcher.html" %}
     {#
       The theme switch. Its whole state is data-theme on <html> (ADR-0004) — never on <body>,
       where the library's shadow tokens have already been substituted and would not flip
       (orchestrator decision §8). Wired by static/site.js; hidden by CSS while that script is
       absent, so a no-script reader never meets a dead button.
     #}
-    <button class="site-theme" type="button" data-site-theme-toggle aria-pressed="false">Dark mode</button>
+    <button class="site-theme" type="button" data-site-theme-toggle aria-pressed="false">{{ data.i18n[lang].theme_toggle }}</button>
   </nav>
 </header>
 
@@ -61,9 +78,10 @@
 
 <footer class="site-footer">
   <p>
-    MIT licensed.
-    <a href="https://github.com/ivan112058/barnacle">Source</a>.
-    Built from <code>src/</code> with esbuild, published from <code>static/</code>.
+    {{ data.i18n[lang].footer_license }}
+    <a href="https://github.com/ivan112058/barnacle">{{ data.i18n[lang].footer_source }}</a>.
+    {# The one string with inline markup: it comes from this repository's own data file. #}
+    {{ data.i18n[lang].footer_built | safe }}
   </p>
 </footer>
 

@@ -1,0 +1,52 @@
+---
+# 本文件由 scripts/i18n-zh.mjs 从 components/spinner.md 生成，请勿手改；要改译文请改那边。
+title: "加载指示器"
+description: "状态区域的默认外观：裸的 role=status 会转圈，而且在减少动效时仍然说着正在加载。"
+---
+
+`[role="status"]` 就是锚点（spec §8），而它的默认外观在这里是圆环。这两件事本该在一起：状态区域是一个
+实时区域，页面上的实时区域几乎总是在说「正在处理」，所以它默认取到的形状正是把这句话说出来的那一个。
+写上 role，圆环就来了。
+
+```html
+<span role="status" aria-label="Loading"></span>
+```
+
+圆环只有 24 像素宽，所以它对屏幕阅读器什么也没说。用 `aria-label` 给它一个名字（或者，等工具类组件
+落地之后，用一个视觉隐藏的文本子元素）——但绝不要可见文本，那会从一个 24 像素的盒子里炸出来。
+`.bn-spinner` 是同一个圆环的显式类形式，给那种你希望一眼就能读懂的标记用。
+
+```html
+<span role="status" class="bn-spinner" aria-label="Loading the report"></span>
+```
+
+### 尺寸与颜色
+
+圆环随一个内部值与承重边框宽度一起缩放：它的笔画是 `--bn-border-width` 的三分之二，所以把边框加粗的页面
+会连带把圆环加粗。它是圆形——库里第二个刻意为之的圆，第一个是单选按钮；圆环之所以圆是由含义决定的，而
+`--bn-radius` 依然管着每一个盒子。
+
+`data-variant` 通过与其它每个组件相同的通道，给转动的那段弧上色：
+
+```html
+<span role="status" aria-label="Loading" data-variant="success"></span>
+<span role="status" aria-label="Loading" data-variant="danger"></span>
+```
+
+### 减少动效
+
+旋转声明在 `prefers-reduced-motion: no-preference` 块里（spec §7），从不写进事后叫停动画的 `reduce`
+块。减少动效时留下的是一个静止、不完整的圆环：缺掉的那段弧就是加载字形，而可访问名是那些字，所以这个
+元素仍然说着「正在加载」，而不是什么也不说。
+
+### 兄弟：骨架屏
+
+加载指示器与骨架屏共用 `role="status"` 锚点，而 `.bn-skeleton` 是用来说清两者区别的：裸的状态区域是
+圆环，带这个类的状态区域是占位。见[骨架屏](/zh/components/skeleton)。
+
+### 覆盖它
+
+不分层的 CSS 赢过库发布的每一条分层规则（ADR-0006），所以覆盖不需要 `!important`。在那之后，
+`--bn-main` 是普通圆环的那段弧，`--bn-foreground` 供给轨道（是它的一个混色，所以轨道会随主题翻转），
+而 `--bn-border-width` 是笔画的来源。记得把令牌重定义在 `:root` 上：派生令牌在它被声明的地方就已经
+替换完毕。

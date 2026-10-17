@@ -52,3 +52,12 @@ minify = false
 [deploy]
 target = "github-pages"
 auto_commit = false
+
+# ---- bilingual: / is English, /zh/ is Chinese (ticket 23) --------------------------------
+# This table is what makes a `*.zh.md` file a translation. Without it seite treats
+# content/components/button.zh.md as an ordinary page and publishes it at /components/button.zh
+# (measured: no warning at all). title/description are optional overrides, but without them a
+# Chinese page's <meta name="description"> falls back to [site]'s English value.
+[languages.zh]
+title = "Barnacle"
+description = "纯 CSS 的语义优先 Neubrutalism UI 库。"

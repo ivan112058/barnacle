@@ -1,7 +1,20 @@
 {% extends "base.html" %}
 {% block title %}{{ page.title }} — {{ site.title }}{% endblock %}
 {% block content %}
-{% set base = site.base_url ~ lang_prefix %}
+{#
+  Two prefixes, and they are not interchangeable (measured, ticket 23):
+
+    lang_base  = site.base_url ~ lang_prefix   for a path THIS template writes ("/components/").
+    page_base  = site.base_url                 for a URL that seite hands us — page.url, item.url,
+                                               prev_post.url, next_post.url and translations[].url
+                                               already carry the language prefix, so adding
+                                               lang_prefix again produced /barnacle/zh/zh/... on
+                                               every Chinese page before this was split.
+
+  Neither carries site.base_path: site.base_url is the only way to the /barnacle/ sub-path.
+#}
+{% set lang_base = site.base_url ~ lang_prefix %}
+{% set page_base = site.base_url %}
 <!-- template: templates/component.html -->
 {#
   The component page consumes the library's grid too (ticket 17). The container is `.site-main` in
@@ -12,8 +25,8 @@
 <article class="site-component">
   <div class="bn-row">
     <div class="bn-col-12" data-site-column="breadcrumb">
-      <nav class="site-breadcrumb" aria-label="Breadcrumb">
-        <a href="{{ base }}/components/">Components</a>
+      <nav class="site-breadcrumb" aria-label="{{ data.i18n[lang].breadcrumb_label }}">
+        <a href="{{ lang_base }}/components/">{{ data.i18n[lang].nav_components }}</a>
         <span aria-hidden="true">/</span>
         <span>{{ page.title }}</span>
       </nav>
@@ -32,9 +45,10 @@
 
       The body is handed to static/site.js verbatim: fences are turned into Preview / Code
       pairs in the browser, so the built HTML keeps the raw seite <pre> and needs no build step.
+      The Chinese page therefore carries the SAME fence markup as the English one, byte for byte.
     #}
     <div class="bn-col-12" data-site-column="example-heading">
-      <h2 class="site-component__section" id="example" data-site-heading="example">Example</h2>
+      <h2 class="site-component__section" id="example" data-site-heading="example">{{ data.i18n[lang].example_heading }}</h2>
     </div>
 
     <div class="bn-col-12" data-site-column="body">
@@ -42,9 +56,9 @@
     </div>
 
     <div class="bn-col-12" data-site-column="pager">
-      <nav class="site-pager" aria-label="Components">
-        {% if prev_post %}<a class="site-pager__prev" href="{{ base }}{{ prev_post.url }}">← {{ prev_post.title }}</a>{% endif %}
-        {% if next_post %}<a class="site-pager__next" href="{{ base }}{{ next_post.url }}">{{ next_post.title }} →</a>{% endif %}
+      <nav class="site-pager" aria-label="{{ data.i18n[lang].pager_label }}">
+        {% if prev_post %}<a class="site-pager__prev" href="{{ page_base }}{{ prev_post.url }}">← {{ prev_post.title }}</a>{% endif %}
+        {% if next_post %}<a class="site-pager__next" href="{{ page_base }}{{ next_post.url }}">{{ next_post.title }} →</a>{% endif %}
       </nav>
     </div>
   </div>

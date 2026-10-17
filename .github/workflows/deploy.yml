@@ -68,6 +68,21 @@ jobs:
       - name: Run the site verification
         run: node scripts/verify-site.mjs
 
+      # Ticket 23: content/**/*.zh.md is GENERATED from content/**/*.md + i18n/zh/** sidecars, so it
+      # has to be (re)generated before seite reads the content directory — and the generation has to
+      # be idempotent, which is what --check asserts. Check first (that is the assertion that
+      # matters), then write, so a stale commit fails the run instead of being silently repaired.
+      - name: Assert the committed Chinese pages match their sidecars
+        run: npm run i18n:check
+
+      - name: Generate the Chinese pages
+        run: npm run i18n
+
+      # Same idea as the static/ check above: whatever the generator had to write must already be
+      # committed, otherwise the deployed site would differ from the commit it was built from.
+      - name: Assert the committed Chinese pages are not stale
+        run: git diff --exit-code -- content/
+
       # --strict turns broken-link / missing-asset warnings into build failures, which is what
       # this repo verifies locally (orchestrator-decisions §6). `seite upgrade --check` is
       # deliberately never run: it always exits non-zero because it wants to write the agent
@@ -77,6 +92,12 @@ jobs:
 
       - name: Validate the site
         run: seite check --strict
+
+      # Needs dist/, so it runs after the build. The browser checks inside skip themselves in CI
+      # (playwright-core installs, but there is no Chrome binary); the static checks decide the exit
+      # code, exactly like scripts/verify-demo.mjs.
+      - name: Verify the bilingual site
+        run: npm run verify:i18n
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

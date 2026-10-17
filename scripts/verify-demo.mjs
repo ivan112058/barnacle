@@ -381,7 +381,9 @@ await check('an authored H2 really does produce a second H2 (the failure mode)',
   // Proven on a throwaway copy of the site so the guarantee above is not just an assertion.
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'barnacle-h2-'));
   try {
-    for (const entry of ['seite.toml', 'content', 'templates', 'static', 'public', '.seite']) {
+    // `data` carries data/i18n.yaml, which base.html reads for every label since ticket 23; `i18n`
+    // is not needed because the probe copies the already-generated content/ as-is.
+    for (const entry of ['seite.toml', 'content', 'templates', 'static', 'public', 'data', '.seite']) {
       if (fs.existsSync(abs(entry))) {
         fs.cpSync(abs(entry), path.join(temp, entry), { recursive: true });
       }
