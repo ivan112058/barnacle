@@ -41,7 +41,7 @@
   }
 
   // src/js/base.js
-  var BnBase = class _BnBase extends HTMLElement {
+  var BnBase = class extends HTMLElement {
     constructor() {
       super();
       this._listeners = /* @__PURE__ */ new Map();
@@ -89,7 +89,7 @@
       for (const type of this._boundTypes()) {
         this.addEventListener(type, this);
         if (!this._listeners.has(type)) this._listeners.set(type, []);
-        this._listeners.get(type).push({ method: null, handler: this });
+        this._listeners.get(type).push({ handler: this });
       }
       this.init();
     }
@@ -135,8 +135,8 @@
       const entries = this._listeners.get(type);
       if (entries?.some((entry) => entry.handler === handler)) return handler;
       this.addEventListener(type, handler);
-      if (entries) entries.push({ method: null, handler });
-      else this._listeners.set(type, [{ method: null, handler }]);
+      if (entries) entries.push({ handler });
+      else this._listeners.set(type, [{ handler }]);
       return handler;
     }
     /** Dispatches `type` to its `on<event>` method, if the subclass defines one. */
@@ -161,10 +161,6 @@
       return event;
     }
     /* --------------------------------- keyboard navigation ---------------------------- */
-    /** `true` when `key` moves the active item; `false` means the component's business. */
-    static isNavigationKey(key) {
-      return NAVIGATION_KEYS.has(key);
-    }
     /**
      * The one keyboard entry point bound by convention: `events()` includes `'keydown'` and
      * `BnBase` fields the arrow/Home/End family. A component only implements `keydown(key,
@@ -177,7 +173,7 @@
      */
     onKeydown(event) {
       const { key } = event;
-      if (!_BnBase.isNavigationKey(key)) return void 0;
+      if (!NAVIGATION_KEYS.has(key)) return void 0;
       if (typeof this.keydown !== "function") return void 0;
       const handled = this.keydown(key, event);
       if (handled && typeof event.preventDefault === "function") event.preventDefault();
@@ -210,6 +206,26 @@
     activeIndex(items, node) {
       return items ? items.indexOf(node) : -1;
     }
+    /**
+     * The member of `items` that `node` belongs to — `node` itself, or the nearest ancestor of it
+     * that is one of the members — or `null` when `node` is outside every one of them.
+     *
+     * The walk stops at `this`, so a listener bound on the element cannot mistake a click on the
+     * component itself (or on a panel, in a tab set) for a click on a tab or a chip. Both
+     * `<bn-tabs>` and `<bn-taginput>` need exactly this, over their own member list.
+     *
+     * @param {Array<HTMLElement>} items
+     * @param {Node|null} node
+     * @returns {HTMLElement|null}
+     */
+    memberFrom(items, node) {
+      let current = node ?? null;
+      while (current && current !== this) {
+        if (items.includes(current)) return current;
+        current = current.parentNode ?? null;
+      }
+      return null;
+    }
     /* --------------------------------------- ids -------------------------------------- */
     /** A page-unique id, for `aria-controls` / `aria-labelledby` / popover targets. */
     uid(prefix) {
@@ -234,6 +250,8 @@
     _activeIndex = -1;
     /** The last state the panel's `toggle` event reported. */
     _open = false;
+    /** What the author wrote in `aria-expanded`, so `teardown()` can put it back (`null`: nothing). */
+    _authorExpanded = null;
     /** `true` when the pending close was ours, and the trigger should take the focus back. */
     _wantsFocusReturn = false;
     /* ---------------------------------- lifecycle ---------------------------------- */
@@ -273,6 +291,7 @@
       this._onToggleListener = null;
       this._activeIndex = -1;
       this._open = false;
+      this._authorExpanded = null;
       this._wantsFocusReturn = false;
     }
     /** The declared bindings; `onClick`, `onFocusout` and `onKeydown` are the handlers. */
@@ -479,7 +498,7 @@
         else panel.setAttribute("hidden", hidden);
       }
       this._authoredHidden = null;
-      this._active = void 0;
+      this._activeIndex = void 0;
     }
     /* ------------------------------------- the seams -------------------------------------- */
     /** Every `role="tab"` inside this element, in document order. */
@@ -513,13 +532,7 @@
      * that happened inside a panel is never mistaken for one on a tab.
      */
     tabFrom(node) {
-      const tabs = this.tabs();
-      let current = node ?? null;
-      while (current && current !== this) {
-        if (tabs.includes(current)) return current;
-        current = current.parentNode ?? null;
-      }
-      return null;
+      return this.memberFrom(this.tabs(), node);
     }
     /* -------------------------------------- selection ------------------------------------- */
     /**
@@ -538,7 +551,7 @@
       if (tabs.length === 0) return -1;
       const active = this.focusOnly(tabs, index);
       if (active < 0) return -1;
-      const previous = this._active;
+      const previous = this._activeIndex;
       const panels = this.panels();
       let activePanel = null;
       tabs.forEach((tab, position) => {
@@ -549,7 +562,7 @@
         panel.hidden = !isSelected;
         if (isSelected) activePanel = panel;
       });
-      this._active = active;
+      this._activeIndex = active;
       if (focus) tabs[active].focus?.();
       if (!silent && previous !== active) {
         this.emit("bn:change", { index: active, tab: tabs[active], panel: activePanel });
@@ -734,13 +747,7 @@
     }
     /** The chip a node belongs to, or `null` when it is not inside one. */
     chipFrom(node) {
-      const chips = this.chips();
-      let current = node ?? null;
-      while (current && current !== this) {
-        if (chips.includes(current)) return current;
-        current = current.parentNode ?? null;
-      }
-      return null;
+      return this.memberFrom(this.chips(), node);
     }
     /* ------------------------------------ rendering --------------------------------------- */
     /**

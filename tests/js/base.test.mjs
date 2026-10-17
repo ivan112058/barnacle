@@ -145,15 +145,18 @@ function keyEvent(key, init = {}) {
 
 /**
  * A stable snapshot of every listener a BnBase instance owns, including the `a`
- * handlers attached with `this.a(...)` (which are not registered on the element and so
- * would never show up through the DOM). Used to prove that a second `init()` — and the
- * listener bookkeeping itself — adds nothing.
+ * handlers attached with `this.a(...)` (which are not registered as the conventional
+ * `on<event>` method and so would never show up through the DOM). Used to prove that a
+ * second `init()` — and the listener bookkeeping itself — adds nothing.
+ *
+ * The entry holds nothing but `handler`, so the snapshot says which of the two kinds it is:
+ * the element itself is the conventional binding (`self`), anything else came from `a()`.
  */
 function listenerSnapshot(element) {
   const parts = [];
   for (const [type, entries] of element._listeners) {
     for (const entry of entries) {
-      parts.push(`${type}:${entry.method?.name ?? 'handler'}`);
+      parts.push(`${type}:${entry.handler === element ? 'self' : 'handler'}`);
     }
   }
   return parts.sort();

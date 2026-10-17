@@ -76,6 +76,8 @@ export class BnDropdown extends BnBase {
   _activeIndex = -1;
   /** The last state the panel's `toggle` event reported. */
   _open = false;
+  /** What the author wrote in `aria-expanded`, so `teardown()` can put it back (`null`: nothing). */
+  _authorExpanded = null;
   /** `true` when the pending close was ours, and the trigger should take the focus back. */
   _wantsFocusReturn = false;
 
@@ -127,6 +129,7 @@ export class BnDropdown extends BnBase {
     this._onToggleListener = null;
     this._activeIndex = -1;
     this._open = false;
+    this._authorExpanded = null;
     this._wantsFocusReturn = false;
   }
 

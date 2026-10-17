@@ -79,7 +79,7 @@ export class BnTabs extends BnBase {
     }
     this._authoredHidden = null;
     // Forgetting the active index is what lets a reconnect announce a switch again.
-    this._active = undefined;
+    this._activeIndex = undefined;
   }
 
   /* ------------------------------------- the seams -------------------------------------- */
@@ -118,13 +118,7 @@ export class BnTabs extends BnBase {
    * that happened inside a panel is never mistaken for one on a tab.
    */
   tabFrom(node) {
-    const tabs = this.tabs();
-    let current = node ?? null;
-    while (current && current !== this) {
-      if (tabs.includes(current)) return current;
-      current = current.parentNode ?? null;
-    }
-    return null;
+    return this.memberFrom(this.tabs(), node);
   }
 
   /* -------------------------------------- selection ------------------------------------- */
@@ -147,7 +141,7 @@ export class BnTabs extends BnBase {
     const active = this.focusOnly(tabs, index);
     if (active < 0) return -1;
 
-    const previous = this._active;
+    const previous = this._activeIndex;
     const panels = this.panels();
     let activePanel = null;
 
@@ -161,7 +155,7 @@ export class BnTabs extends BnBase {
       if (isSelected) activePanel = panel;
     });
 
-    this._active = active;
+    this._activeIndex = active;
     if (focus) tabs[active].focus?.();
 
     // "Changing" tabs announces itself; re-selecting the current one does not. `init()` is

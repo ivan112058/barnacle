@@ -49,18 +49,28 @@
 /*
  * Four fixed combinations of the layout primitives. Each one is a single decision ("stack",
  * "wrap and centre", "centre inside", "push apart") rather than a property-per-class system.
+ *
+ * Two gaps, two names. `.bn-stack` breathes at 1rem because its children are blocks; the two
+ * horizontal combinations sit at 0.75rem because a row of chips or a "label … value" pair wants
+ * less air. Each gap is declared on the class that owns it, so a page can retune one combination
+ * (`--_stack-gap` inherits) without the other two following it — the single undeclared name both
+ * used to read meant one name with two meanings, and nothing could tune either.
  */
 .bn-stack {
+  --_stack-gap: 1rem;
+
   display: flex;
   flex-direction: column;
-  gap: var(--_stack-gap, 1rem);
+  gap: var(--_stack-gap);
 }
 
 .bn-cluster {
+  --_cluster-gap: 0.75rem;
+
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--_stack-gap, 0.75rem);
+  gap: var(--_cluster-gap);
 }
 
 .bn-center {
@@ -69,10 +79,12 @@
 }
 
 .bn-between {
+  --_row-gap: 0.75rem;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--_stack-gap, 0.75rem);
+  gap: var(--_row-gap);
 }
 
 /* ----------------------------------------------------------- block spacing ----------- */

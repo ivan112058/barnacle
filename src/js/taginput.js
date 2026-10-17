@@ -225,13 +225,7 @@ export class BnTagInput extends BnBase {
 
   /** The chip a node belongs to, or `null` when it is not inside one. */
   chipFrom(node) {
-    const chips = this.chips();
-    let current = node ?? null;
-    while (current && current !== this) {
-      if (chips.includes(current)) return current;
-      current = current.parentNode ?? null;
-    }
-    return null;
+    return this.memberFrom(this.chips(), node);
   }
 
   /* ------------------------------------ rendering --------------------------------------- */

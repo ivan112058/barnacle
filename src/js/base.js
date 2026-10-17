@@ -96,7 +96,7 @@ export class BnBase extends HTMLElement {
     for (const type of this._boundTypes()) {
       this.addEventListener(type, this);
       if (!this._listeners.has(type)) this._listeners.set(type, []);
-      this._listeners.get(type).push({ method: null, handler: this });
+      this._listeners.get(type).push({ handler: this });
     }
     this.init();
   }
@@ -148,8 +148,8 @@ export class BnBase extends HTMLElement {
     const entries = this._listeners.get(type);
     if (entries?.some((entry) => entry.handler === handler)) return handler;
     this.addEventListener(type, handler);
-    if (entries) entries.push({ method: null, handler });
-    else this._listeners.set(type, [{ method: null, handler }]);
+    if (entries) entries.push({ handler });
+    else this._listeners.set(type, [{ handler }]);
     return handler;
   }
 
@@ -179,11 +179,6 @@ export class BnBase extends HTMLElement {
 
   /* --------------------------------- keyboard navigation ---------------------------- */
 
-  /** `true` when `key` moves the active item; `false` means the component's business. */
-  static isNavigationKey(key) {
-    return NAVIGATION_KEYS.has(key);
-  }
-
   /**
    * The one keyboard entry point bound by convention: `events()` includes `'keydown'` and
    * `BnBase` fields the arrow/Home/End family. A component only implements `keydown(key,
@@ -196,7 +191,7 @@ export class BnBase extends HTMLElement {
    */
   onKeydown(event) {
     const { key } = event;
-    if (!BnBase.isNavigationKey(key)) return undefined;
+    if (!NAVIGATION_KEYS.has(key)) return undefined;
     if (typeof this.keydown !== 'function') return undefined;
 
     const handled = this.keydown(key, event);
@@ -233,6 +228,27 @@ export class BnBase extends HTMLElement {
   /** The index of `node` inside `items`, or `-1`. */
   activeIndex(items, node) {
     return items ? items.indexOf(node) : -1;
+  }
+
+  /**
+   * The member of `items` that `node` belongs to — `node` itself, or the nearest ancestor of it
+   * that is one of the members — or `null` when `node` is outside every one of them.
+   *
+   * The walk stops at `this`, so a listener bound on the element cannot mistake a click on the
+   * component itself (or on a panel, in a tab set) for a click on a tab or a chip. Both
+   * `<bn-tabs>` and `<bn-taginput>` need exactly this, over their own member list.
+   *
+   * @param {Array<HTMLElement>} items
+   * @param {Node|null} node
+   * @returns {HTMLElement|null}
+   */
+  memberFrom(items, node) {
+    let current = node ?? null;
+    while (current && current !== this) {
+      if (items.includes(current)) return current;
+      current = current.parentNode ?? null;
+    }
+    return null;
   }
 
   /* --------------------------------------- ids -------------------------------------- */
