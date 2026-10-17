@@ -81,7 +81,12 @@ const WORKFLOW_EXPECTATIONS = [
   { needle: 'npm run build', why: 'CI must build the artifacts before seite sees them' },
   { needle: 'node scripts/verify.mjs', why: 'the 21 build-chain checks must run in CI' },
   { needle: 'node scripts/verify-theme.mjs', why: 'the 16 theme checks must run in CI' },
+  { needle: 'node scripts/verify-static.mjs', why: 'the 26 static component checks must run in CI' },
+  { needle: 'node scripts/verify-interaction.mjs', why: 'the 15 interaction-geometry checks must run in CI' },
   { needle: 'node scripts/verify-site.mjs', why: 'the 24 site checks must run in CI' },
+  { needle: 'node scripts/verify-base.mjs', why: 'the 35 base-layer checks must run in CI' },
+  { needle: 'node scripts/verify-layout.mjs', why: 'the 22 layout and utilities checks must run in CI' },
+  { needle: 'node scripts/verify-release.mjs --no-browser', why: 'the offline release gate must run in CI' },
   { needle: 'git diff --exit-code -- static/', why: 'committed artifacts must match the CI build' },
   { needle: `VERSION=v${PINNED_SEITE_VERSION}`, why: 'seite must be installed at the pinned version' },
   { needle: '"$HOME/.local/bin" >> "$GITHUB_PATH"', why: 'install.sh puts seite off the CI PATH' },
@@ -279,6 +284,12 @@ await check(`${WORKFLOW} exists and pins the deploy mechanism`, () => {
 
 await check('the workflow places the build chain before the seite build and upload', () => {
   const workflow = read(WORKFLOW);
+  /*
+   * The order the workflow has to keep, not just the presence of its steps: the artifacts are
+   * built before anything reads them, every audit of the built site runs after `seite build`, and
+   * the upload is last. The audit steps added for the review sit where their inputs exist —
+   * verify-static / verify-interaction read `static/` only, the others read `dist/`.
+   */
   const order = [
     'actions/checkout@v4',
     'actions/setup-node@v4',
@@ -287,9 +298,14 @@ await check('the workflow places the build chain before the seite build and uplo
     'git diff --exit-code -- static/',
     'node scripts/verify.mjs',
     'node scripts/verify-theme.mjs',
+    'node scripts/verify-static.mjs',
+    'node scripts/verify-interaction.mjs',
     'node scripts/verify-site.mjs',
     'seite build --strict',
     'seite check --strict',
+    'node scripts/verify-base.mjs',
+    'node scripts/verify-layout.mjs',
+    'node scripts/verify-release.mjs --no-browser',
     'actions/upload-pages-artifact@v3',
   ];
   const positions = order.map((needle) => ({ needle, at: workflow.indexOf(needle) }));

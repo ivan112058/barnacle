@@ -65,6 +65,14 @@ jobs:
       - name: Run the theme verification
         run: node scripts/verify-theme.mjs
 
+      # The component-level audits: a stylesheet-only bill of materials (no dist/ needed, so they
+      # gate the build as early as the artifact the build just wrote).
+      - name: Run the static component verification
+        run: node scripts/verify-static.mjs
+
+      - name: Run the interaction-geometry verification
+        run: node scripts/verify-interaction.mjs
+
       - name: Run the site verification
         run: node scripts/verify-site.mjs
 
@@ -98,6 +106,20 @@ jobs:
       # code, exactly like scripts/verify-demo.mjs.
       - name: Verify the bilingual site
         run: npm run verify:i18n
+
+      # The rest of the audits that read the built site rather than the sources.
+      - name: Run the base-layer verification
+        run: node scripts/verify-base.mjs
+
+      - name: Run the layout and utilities verification
+        run: node scripts/verify-layout.mjs
+
+      # The v1 acceptance gate, offline half: the crawl, the asset list, the bilingual pairs and
+      # the per-file consumption recipe, all from this build. --no-browser keeps it honest on a
+      # runner with no Chrome — the Chrome half is what `npm run verify:release -- --live` adds
+      # once the site is published.
+      - name: Verify the release gate (offline)
+        run: node scripts/verify-release.mjs --no-browser
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

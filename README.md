@@ -163,7 +163,14 @@ checks still gate the exit code. `npm run verify:release` follows the same rule.
 `$HOME/.local/bin` appended to `$GITHUB_PATH` → version assertion → `npm ci` →
 `npm run build` → `git diff --exit-code -- static/` (the committed artifacts must be exactly
 what CI rebuilds) → `scripts/verify.mjs` → `scripts/verify-theme.mjs` →
-`scripts/verify-site.mjs` → `seite build --strict` → `seite check --strict` → upload `dist/`.
+`scripts/verify-static.mjs` → `scripts/verify-interaction.mjs` → `scripts/verify-site.mjs` →
+`seite build --strict` → `seite check --strict` → `scripts/verify-base.mjs` →
+`scripts/verify-layout.mjs` → `scripts/verify-release.mjs --no-browser` → upload `dist/`.
+
+The two halves are split by what a script reads: the four audits above the `seite build` line
+only need `static/` (the artifact `npm run build` just wrote), the three below it read `dist/`.
+`verify-release` runs in its offline mode, which is the same gate as
+`npm run verify:release -- --live` minus the HTTP half — it needs no network and no Chrome.
 
 `seite upgrade --check` is never run in CI: it always exits non-zero because it wants to write
 agent scaffolding.
