@@ -1,1 +1,82 @@
-/* dialog.css — filled by ticket 14 (layer: components) */
+/* dialog.css — the native <dialog>, dressed. (layer: components, assigned by CSS_MANIFEST.)
+ *
+ * The anchor is the element (spec §8, ADR-0001): a bare <dialog> is a dialog, and no class or
+ * attribute is invented for it. Two things follow from the platform, and both are load-bearing here.
+ *
+ *   1. An open modal lives in the browser's *top layer*. Nothing above it in the document can
+ *      clip it, no ancestor's `overflow` or `z-index` reaches it, and it therefore needs no
+ *      `z-index` of its own — writing one would only invite someone to reason about stacking
+ *      again. Custom properties still inherit from `:root` in the top layer, so theming,
+ *      including the dark shadow, arrives unchanged.
+ *   2. The dialog is a *surface*, not a control. It takes no displacement and no hover or press
+ *      state, so nothing in this file reads a `--_lift-*` / `--_press-*` slot. Buttons inside it
+ *      keep the library's interaction contract exactly as they have it everywhere else: one
+ *      contract, no per-context exception to remember.
+ *
+ * The frame is three tokens: the page's own surface, the structural border, and the largest hard
+ * shadow tier — a modal floats furthest, so it takes the tier that says so (ADR-0003). The
+ * overlay and the entry animation are not here: spec §5 puts `::backdrop` and every keyframe in
+ * animations.css, which this ticket also owns.
+ *
+ * Two measurements shaped the layout, and both were made in Chrome before the lines were written:
+ *
+ *   - `box-sizing: border-box` is not cosmetic. The library ships no global reset, and the UA's
+ *     dialog is a content-box. With `max-block-size: calc(100dvh - 2rem)` on a content box, a
+ *     dialog whose content fills the cap grows by its own padding and border on top of the cap:
+ *     measured 822px tall in an 800px viewport, i.e. 11px lost off the top *and* the bottom. On
+ *     a border box the same dialog is 768px, fits, and scrolls its own content.
+ *   - `dialog:not(:modal)` puts an `open` dialog back in the flow. The UA absolutely positions it
+ *     (with `inset-inline: 0; margin: auto`), so a `<dialog open>` written into a document — the
+ *     no-script case, and the only case a static preview can show — hovers over the paragraph
+ *     that follows it while that paragraph slides up underneath. A modal keeps the UA's fixed,
+ *     centred box, which is why the rule is guarded by `:modal` rather than by `[open]`: the
+ *     guard is what keeps `showModal()` centred.
+ *
+ * No `outline` appears in this file on purpose. The focus ring is declared once in 00-base.css
+ * from the ring slots, and it is never removed — a dialog that swallowed its own ring would be
+ * the exact WCAG F78 regression spec §7 forbids.
+ */
+
+dialog {
+  /* The box: a readable measure, never wider than the viewport, never taller than the viewport. */
+  box-sizing: border-box;
+  inline-size: min(32rem, calc(100vw - 2rem));
+  max-inline-size: none;                 /* the UA caps the width; the cap above replaces it */
+  max-block-size: calc(100dvh - 2rem);
+  margin: auto;                          /* the native centring of a modal */
+  padding: 1.5rem;
+  overflow: auto;                        /* a long dialog scrolls inside itself, not off-screen */
+
+  /* The surface, its frame and the floating tier. */
+  background: var(--bn-background);
+  color: var(--bn-foreground);
+  border-style: solid;
+  border-width: var(--bn-border-width);
+  border-color: var(--bn-border-color);
+  border-radius: var(--bn-radius);
+  box-shadow: var(--bn-shadow-lg);
+}
+
+/* An `open` dialog without the modal flag is content, not an overlay: it takes its place in the
+   document instead of floating over the text that follows it. */
+dialog:not(:modal) {
+  position: relative;
+  margin-block: 1.5rem;
+}
+
+/* The action row. A form inside a dialog that carries no fields is the close/confirm strip; a
+   dialog whose body *is* a form keeps the form's own vertical rhythm, because flattening a
+   fieldset into a row of buttons is not a style opinion, it is a broken layout. */
+dialog > form:not(:has(:is(input, select, textarea))) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;                          /* ≥ the lg offset, so neighbouring shadows cannot collide */
+  margin-block-start: 1.5rem;
+}
+
+/* A dialog owns its own spacing: the last block inside it adds no stray margin. */
+dialog > :last-child {
+  margin-block-end: 0;
+}
