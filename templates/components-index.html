@@ -3,25 +3,56 @@
 {% block content %}
 {% set base = site.base_url ~ lang_prefix %}
 <!-- template: templates/components-index.html -->
-<header class="site-page-head">
-  <h1 class="site-page__title">{{ page.title }}</h1>
-  {% if page.description %}<p class="site-lede">{{ page.description }}</p>{% endif %}
-</header>
+{#
+  The index is laid out by the library's own grid (ticket 17): every page of this site consumes
+  .bn-container / .bn-row / .bn-col-* instead of a private copy of one, so the grid is under real
+  load rather than demonstrated on a single example page. The container carries the site's width
+  and padding through --_container-max / --_container-pad (static/style.css), which keeps the
+  index aligned with the header and footer at every viewport.
+#}
+<div class="site-page-head bn-row">
+  <div class="bn-col-12" data-site-column="head">
+    <h1 class="site-page__title">{{ page.title }}</h1>
+    {% if page.description %}<p class="site-lede">{{ page.description }}</p>{% endif %}
+  </div>
+</div>
 
-{% if page.content %}<div class="site-prose">{{ page.content | safe }}</div>{% endif %}
+{% if page.content %}
+<div class="bn-row">
+  <div class="bn-col-12" data-site-column="intro">
+    <div class="site-prose">{{ page.content | safe }}</div>
+  </div>
+</div>
+{% endif %}
 
 {% if items | length > 0 %}
-<ul class="site-grid">
+{#
+  One card per four columns: three across on a wide screen, two from 768px, one below it. The card
+  count per row is derived from the grid contract and asserted in scripts/verify-layout.mjs.
+
+  `.site-grid` is the docs site's own hook on a *separate* element rather than a second class on
+  the row. Adding it to the row would silently undo the grid: `.site-grid` sets
+  `grid-template-columns: repeat(auto-fill, …)`, and unlayered CSS beats every cascade layer
+  (ADR-0006) — so the site's auto-fill would win over the library's twelve tracks. The site keeps
+  its names to itself and composes the library class instead.
+#}
+<div class="bn-row">
   {% for item in items %}
-  <li class="site-card">
-    <a class="site-card__link" href="{{ base }}{{ item.url }}">
-      <span class="site-card__title">{{ item.title }}</span>
-      {% if item.description %}<span class="site-card__desc">{{ item.description }}</span>{% endif %}
-    </a>
-  </li>
+  <div class="bn-col-4" data-site-column="card">
+    <div class="site-card">
+      <a class="site-card__link" href="{{ base }}{{ item.url }}">
+        <span class="site-card__title">{{ item.title }}</span>
+        {% if item.description %}<span class="site-card__desc">{{ item.description }}</span>{% endif %}
+      </a>
+    </div>
+  </div>
   {% endfor %}
-</ul>
+</div>
 {% else %}
-<p class="site-empty">No component pages yet — they arrive with tickets 10–22.</p>
+<div class="bn-row">
+  <div class="bn-col-12" data-site-column="empty">
+    <p class="site-empty">No component pages yet — they arrive with tickets 10–22.</p>
+  </div>
+</div>
 {% endif %}
 {% endblock %}

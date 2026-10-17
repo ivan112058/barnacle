@@ -1,0 +1,470 @@
+{
+  "label": "before",
+  "chrome": "155.0.8059.82",
+  "pages": {
+    "components-index": {
+      "320": {
+        "scrollWidth": 320,
+        "innerWidth": 320,
+        "bodyScrollWidth": 320,
+        "proseWidth": 288,
+        "proseMaxWidth": "736px",
+        "mainBox": {
+          "x": 0,
+          "w": 320,
+          "h": 1334
+        },
+        "mainPadding": "16px / 16px",
+        "headerBox": {
+          "x": 0,
+          "w": 320,
+          "h": 223
+        },
+        "footerBox": {
+          "x": 0,
+          "w": 320,
+          "h": 139
+        },
+        "cardCount": 5,
+        "cardRows": 5,
+        "cardsPerRow": 1,
+        "cardWidths": [
+          288
+        ],
+        "firstCard": {
+          "x": 16,
+          "w": 288,
+          "h": 191
+        },
+        "secondCardX": 16,
+        "h1Box": {
+          "x": 16,
+          "w": 288,
+          "h": 32
+        },
+        "ledeBox": {
+          "x": 16,
+          "w": 288,
+          "h": 58
+        },
+        "pagerBox": null,
+        "demoCount": 0
+      },
+      "375": {
+        "scrollWidth": 375,
+        "innerWidth": 375,
+        "bodyScrollWidth": 375,
+        "proseWidth": 343,
+        "proseMaxWidth": "736px",
+        "mainBox": {
+          "x": 0,
+          "w": 375,
+          "h": 1212
+        },
+        "mainPadding": "16px / 16px",
+        "headerBox": {
+          "x": 0,
+          "w": 375,
+          "h": 223
+        },
+        "footerBox": {
+          "x": 0,
+          "w": 375,
+          "h": 139
+        },
+        "cardCount": 5,
+        "cardRows": 5,
+        "cardsPerRow": 1,
+        "cardWidths": [
+          343
+        ],
+        "firstCard": {
+          "x": 16,
+          "w": 343,
+          "h": 167
+        },
+        "secondCardX": 16,
+        "h1Box": {
+          "x": 16,
+          "w": 343,
+          "h": 32
+        },
+        "ledeBox": {
+          "x": 16,
+          "w": 343,
+          "h": 58
+        },
+        "pagerBox": null,
+        "demoCount": 0
+      },
+      "768": {
+        "scrollWidth": 768,
+        "innerWidth": 768,
+        "bodyScrollWidth": 768,
+        "proseWidth": 707,
+        "proseMaxWidth": "736px",
+        "mainBox": {
+          "x": 0,
+          "w": 768,
+          "h": 796
+        },
+        "mainPadding": "30.72px / 30.72px",
+        "headerBox": {
+          "x": 0,
+          "w": 768,
+          "h": 103
+        },
+        "footerBox": {
+          "x": 0,
+          "w": 768,
+          "h": 115
+        },
+        "cardCount": 5,
+        "cardRows": 4,
+        "cardsPerRow": 1,
+        "cardWidths": [
+          341
+        ],
+        "firstCard": {
+          "x": 31,
+          "w": 341,
+          "h": 171
+        },
+        "secondCardX": 396,
+        "h1Box": {
+          "x": 31,
+          "w": 707,
+          "h": 32
+        },
+        "ledeBox": {
+          "x": 31,
+          "w": 707,
+          "h": 29
+        },
+        "pagerBox": null,
+        "demoCount": 0
+      },
+      "1024": {
+        "scrollWidth": 1024,
+        "innerWidth": 1024,
+        "bodyScrollWidth": 1024,
+        "proseWidth": 736,
+        "proseMaxWidth": "736px",
+        "mainBox": {
+          "x": 16,
+          "w": 992,
+          "h": 676
+        },
+        "mainPadding": "40.96px / 40.96px",
+        "headerBox": {
+          "x": 16,
+          "w": 992,
+          "h": 103
+        },
+        "footerBox": {
+          "x": 16,
+          "w": 992,
+          "h": 115
+        },
+        "cardCount": 5,
+        "cardRows": 3,
+        "cardsPerRow": 1,
+        "cardWidths": [
+          287
+        ],
+        "firstCard": {
+          "x": 57,
+          "w": 287,
+          "h": 195
+        },
+        "secondCardX": 368,
+        "h1Box": {
+          "x": 57,
+          "w": 910,
+          "h": 35
+        },
+        "ledeBox": {
+          "x": 57,
+          "w": 736,
+          "h": 29
+        },
+        "pagerBox": null,
+        "demoCount": 0
+      },
+      "1440": {
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "proseWidth": 736,
+        "proseMaxWidth": "736px",
+        "mainBox": {
+          "x": 224,
+          "w": 992,
+          "h": 687
+        },
+        "mainPadding": "48px / 48px",
+        "headerBox": {
+          "x": 224,
+          "w": 992,
+          "h": 103
+        },
+        "footerBox": {
+          "x": 224,
+          "w": 992,
+          "h": 115
+        },
+        "cardCount": 5,
+        "cardRows": 3,
+        "cardsPerRow": 1,
+        "cardWidths": [
+          283
+        ],
+        "firstCard": {
+          "x": 272,
+          "w": 283,
+          "h": 195
+        },
+        "secondCardX": 579,
+        "h1Box": {
+          "x": 272,
+          "w": 896,
+          "h": 46
+        },
+        "ledeBox": {
+          "x": 272,
+          "w": 736,
+          "h": 29
+        },
+        "pagerBox": null,
+        "demoCount": 0
+      }
+    },
+    "components-button": {
+      "320": {
+        "scrollWidth": 377,
+        "innerWidth": 320,
+        "bodyScrollWidth": 377,
+        "proseWidth": 288,
+        "proseMaxWidth": "736px",
+        "mainBox": {
+          "x": 0,
+          "w": 320,
+          "h": 4266
+        },
+        "mainPadding": "16px / 16px",
+        "headerBox": {
+          "x": 0,
+          "w": 320,
+          "h": 223
+        },
+        "footerBox": {
+          "x": 0,
+          "w": 320,
+          "h": 139
+        },
+        "cardCount": 0,
+        "cardRows": 0,
+        "cardsPerRow": 0,
+        "cardWidths": [],
+        "firstCard": null,
+        "secondCardX": null,
+        "h1Box": {
+          "x": 16,
+          "w": 288,
+          "h": 32
+        },
+        "ledeBox": {
+          "x": 16,
+          "w": 288,
+          "h": 144
+        },
+        "pagerBox": {
+          "x": 16,
+          "w": 288,
+          "h": 45
+        },
+        "demoCount": 2
+      },
+      "375": {
+        "scrollWidth": 377,
+        "innerWidth": 375,
+        "bodyScrollWidth": 377,
+        "proseWidth": 343,
+        "proseMaxWidth": "736px",
+        "mainBox": {
+          "x": 0,
+          "w": 375,
+          "h": 3749
+        },
+        "mainPadding": "16px / 16px",
+        "headerBox": {
+          "x": 0,
+          "w": 375,
+          "h": 223
+        },
+        "footerBox": {
+          "x": 0,
+          "w": 375,
+          "h": 139
+        },
+        "cardCount": 0,
+        "cardRows": 0,
+        "cardsPerRow": 0,
+        "cardWidths": [],
+        "firstCard": null,
+        "secondCardX": null,
+        "h1Box": {
+          "x": 16,
+          "w": 343,
+          "h": 32
+        },
+        "ledeBox": {
+          "x": 16,
+          "w": 343,
+          "h": 115
+        },
+        "pagerBox": {
+          "x": 16,
+          "w": 343,
+          "h": 45
+        },
+        "demoCount": 2
+      },
+      "768": {
+        "scrollWidth": 768,
+        "innerWidth": 768,
+        "bodyScrollWidth": 768,
+        "proseWidth": 707,
+        "proseMaxWidth": "736px",
+        "mainBox": {
+          "x": 0,
+          "w": 768,
+          "h": 2800
+        },
+        "mainPadding": "30.72px / 30.72px",
+        "headerBox": {
+          "x": 0,
+          "w": 768,
+          "h": 103
+        },
+        "footerBox": {
+          "x": 0,
+          "w": 768,
+          "h": 115
+        },
+        "cardCount": 0,
+        "cardRows": 0,
+        "cardsPerRow": 0,
+        "cardWidths": [],
+        "firstCard": null,
+        "secondCardX": null,
+        "h1Box": {
+          "x": 31,
+          "w": 707,
+          "h": 32
+        },
+        "ledeBox": {
+          "x": 31,
+          "w": 707,
+          "h": 58
+        },
+        "pagerBox": {
+          "x": 31,
+          "w": 707,
+          "h": 45
+        },
+        "demoCount": 2
+      },
+      "1024": {
+        "scrollWidth": 1024,
+        "innerWidth": 1024,
+        "bodyScrollWidth": 1024,
+        "proseWidth": 736,
+        "proseMaxWidth": "736px",
+        "mainBox": {
+          "x": 16,
+          "w": 992,
+          "h": 2803
+        },
+        "mainPadding": "40.96px / 40.96px",
+        "headerBox": {
+          "x": 16,
+          "w": 992,
+          "h": 103
+        },
+        "footerBox": {
+          "x": 16,
+          "w": 992,
+          "h": 115
+        },
+        "cardCount": 0,
+        "cardRows": 0,
+        "cardsPerRow": 0,
+        "cardWidths": [],
+        "firstCard": null,
+        "secondCardX": null,
+        "h1Box": {
+          "x": 57,
+          "w": 910,
+          "h": 35
+        },
+        "ledeBox": {
+          "x": 57,
+          "w": 736,
+          "h": 58
+        },
+        "pagerBox": {
+          "x": 57,
+          "w": 910,
+          "h": 45
+        },
+        "demoCount": 2
+      },
+      "1440": {
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "proseWidth": 736,
+        "proseMaxWidth": "736px",
+        "mainBox": {
+          "x": 224,
+          "w": 992,
+          "h": 2814
+        },
+        "mainPadding": "48px / 48px",
+        "headerBox": {
+          "x": 224,
+          "w": 992,
+          "h": 103
+        },
+        "footerBox": {
+          "x": 224,
+          "w": 992,
+          "h": 115
+        },
+        "cardCount": 0,
+        "cardRows": 0,
+        "cardsPerRow": 0,
+        "cardWidths": [],
+        "firstCard": null,
+        "secondCardX": null,
+        "h1Box": {
+          "x": 272,
+          "w": 896,
+          "h": 46
+        },
+        "ledeBox": {
+          "x": 272,
+          "w": 736,
+          "h": 58
+        },
+        "pagerBox": {
+          "x": 272,
+          "w": 896,
+          "h": 45
+        },
+        "demoCount": 2
+      }
+    }
+  }
+}

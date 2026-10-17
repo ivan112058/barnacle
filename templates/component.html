@@ -3,31 +3,50 @@
 {% block content %}
 {% set base = site.base_url ~ lang_prefix %}
 <!-- template: templates/component.html -->
+{#
+  The component page consumes the library's grid too (ticket 17). The container is `.site-main` in
+  base.html, so this page only has to place its blocks: breadcrumb, title, the injected H2 and the
+  prose each sit in their own full-width column, and the prose keeps its own readable measure
+  through `--_col-max` rather than by narrowing the grid.
+#}
 <article class="site-component">
-  <nav class="site-breadcrumb" aria-label="Breadcrumb">
-    <a href="{{ base }}/components/">Components</a>
-    <span aria-hidden="true">/</span>
-    <span>{{ page.title }}</span>
-  </nav>
+  <div class="bn-row">
+    <div class="bn-col-12" data-site-column="breadcrumb">
+      <nav class="site-breadcrumb" aria-label="Breadcrumb">
+        <a href="{{ base }}/components/">Components</a>
+        <span aria-hidden="true">/</span>
+        <span>{{ page.title }}</span>
+      </nav>
+    </div>
 
-  <h1 class="site-page__title">{{ page.title }}</h1>
-  {% if page.description %}<p class="site-lede">{{ page.description }}</p>{% endif %}
+    <div class="bn-col-12" data-site-column="head">
+      <h1 class="site-page__title">{{ page.title }}</h1>
+      {% if page.description %}<p class="site-lede">{{ page.description }}</p>{% endif %}
+    </div>
 
-  {#
-    The one H2 of a component page comes from here, never from the author: spec §10 keeps
-    authored headings at H3 and below so the outline reads h1 → h2 → h3. data-site-heading
-    marks the injected heading, which is how scripts/verify-demo.mjs tells it apart from an
-    authored one — an H2 in the Markdown would render as a second H2.
+    {#
+      The one H2 of a component page comes from here, never from the author: spec §10 keeps
+      authored headings at H3 and below so the outline reads h1 → h2 → h3. data-site-heading
+      marks the injected heading, which is how scripts/verify-demo.mjs tells it apart from an
+      authored one — an H2 in the Markdown would render as a second H2.
 
-    The body is handed to static/site.js verbatim: fences are turned into Preview / Code
-    pairs in the browser, so the built HTML keeps the raw seite <pre> and needs no build step.
-  #}
-  <h2 class="site-component__section" id="example" data-site-heading="example">Example</h2>
-  <div class="site-prose">{{ page.content | safe }}</div>
+      The body is handed to static/site.js verbatim: fences are turned into Preview / Code
+      pairs in the browser, so the built HTML keeps the raw seite <pre> and needs no build step.
+    #}
+    <div class="bn-col-12" data-site-column="example-heading">
+      <h2 class="site-component__section" id="example" data-site-heading="example">Example</h2>
+    </div>
 
-  <nav class="site-pager" aria-label="Components">
-    {% if prev_post %}<a class="site-pager__prev" href="{{ base }}{{ prev_post.url }}">← {{ prev_post.title }}</a>{% endif %}
-    {% if next_post %}<a class="site-pager__next" href="{{ base }}{{ next_post.url }}">{{ next_post.title }} →</a>{% endif %}
-  </nav>
+    <div class="bn-col-12" data-site-column="body">
+      <div class="site-prose">{{ page.content | safe }}</div>
+    </div>
+
+    <div class="bn-col-12" data-site-column="pager">
+      <nav class="site-pager" aria-label="Components">
+        {% if prev_post %}<a class="site-pager__prev" href="{{ base }}{{ prev_post.url }}">← {{ prev_post.title }}</a>{% endif %}
+        {% if next_post %}<a class="site-pager__next" href="{{ base }}{{ next_post.url }}">{{ next_post.title }} →</a>{% endif %}
+      </nav>
+    </div>
+  </div>
 </article>
 {% endblock %}

@@ -19,7 +19,8 @@
     "verify:button": "node scripts/verify-button.mjs",
     "verify:toast": "node scripts/verify-toast.mjs",
     "verify:tabs": "node scripts/verify-tabs.mjs",
-    "verify:dropdown": "node scripts/verify-dropdown.mjs"
+    "verify:dropdown": "node scripts/verify-dropdown.mjs",
+    "verify:layout": "node scripts/verify-layout.mjs"
   },
   "dependencies": {},
   "devDependencies": {

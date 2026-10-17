@@ -1,0 +1,213 @@
+{
+  "label": "after",
+  "pages": {
+    "index": {
+      "320": {
+        "docScroll": 320,
+        "innerWidth": 320,
+        "container": 320,
+        "tracks": 12,
+        "cards": 7,
+        "perRow": 1,
+        "cardWidth": 288,
+        "prose": 288
+      },
+      "375": {
+        "docScroll": 375,
+        "innerWidth": 375,
+        "container": 375,
+        "tracks": 12,
+        "cards": 7,
+        "perRow": 1,
+        "cardWidth": 343,
+        "prose": 343
+      },
+      "768": {
+        "docScroll": 768,
+        "innerWidth": 768,
+        "container": 768,
+        "tracks": 12,
+        "cards": 7,
+        "perRow": 1,
+        "cardWidth": 707,
+        "prose": 707
+      },
+      "1024": {
+        "docScroll": 1024,
+        "innerWidth": 1024,
+        "container": 992,
+        "tracks": 12,
+        "cards": 7,
+        "perRow": 3,
+        "cardWidth": 293,
+        "prose": 736
+      },
+      "1440": {
+        "docScroll": 1440,
+        "innerWidth": 1440,
+        "container": 992,
+        "tracks": 12,
+        "cards": 7,
+        "perRow": 3,
+        "cardWidth": 293,
+        "prose": 736
+      }
+    },
+    "button": {
+      "320": {
+        "docScroll": 320,
+        "innerWidth": 320,
+        "container": 320,
+        "tracks": 12,
+        "cards": 0,
+        "perRow": 0,
+        "cardWidth": null,
+        "prose": 288
+      },
+      "375": {
+        "docScroll": 375,
+        "innerWidth": 375,
+        "container": 375,
+        "tracks": 12,
+        "cards": 0,
+        "perRow": 0,
+        "cardWidth": null,
+        "prose": 343
+      },
+      "768": {
+        "docScroll": 768,
+        "innerWidth": 768,
+        "container": 768,
+        "tracks": 12,
+        "cards": 0,
+        "perRow": 0,
+        "cardWidth": null,
+        "prose": 707
+      },
+      "1024": {
+        "docScroll": 1024,
+        "innerWidth": 1024,
+        "container": 992,
+        "tracks": 12,
+        "cards": 0,
+        "perRow": 0,
+        "cardWidth": null,
+        "prose": 736
+      },
+      "1440": {
+        "docScroll": 1440,
+        "innerWidth": 1440,
+        "container": 992,
+        "tracks": 12,
+        "cards": 0,
+        "perRow": 0,
+        "cardWidth": null,
+        "prose": 736
+      }
+    },
+    "layout": {
+      "320": {
+        "docScroll": 320,
+        "innerWidth": 320,
+        "container": 320,
+        "tracks": 12,
+        "cards": 0,
+        "perRow": 0,
+        "cardWidth": null,
+        "prose": 288
+      },
+      "375": {
+        "docScroll": 375,
+        "innerWidth": 375,
+        "container": 375,
+        "tracks": 12,
+        "cards": 0,
+        "perRow": 0,
+        "cardWidth": null,
+        "prose": 343
+      },
+      "768": {
+        "docScroll": 768,
+        "innerWidth": 768,
+        "container": 768,
+        "tracks": 12,
+        "cards": 0,
+        "perRow": 0,
+        "cardWidth": null,
+        "prose": 707
+      },
+      "1024": {
+        "docScroll": 1024,
+        "innerWidth": 1024,
+        "container": 992,
+        "tracks": 12,
+        "cards": 0,
+        "perRow": 0,
+        "cardWidth": null,
+        "prose": 736
+      },
+      "1440": {
+        "docScroll": 1440,
+        "innerWidth": 1440,
+        "container": 992,
+        "tracks": 12,
+        "cards": 0,
+        "perRow": 0,
+        "cardWidth": null,
+        "prose": 736
+      }
+    },
+    "utilities": {
+      "320": {
+        "docScroll": 320,
+        "innerWidth": 320,
+        "container": 320,
+        "tracks": 12,
+        "cards": 0,
+        "perRow": 0,
+        "cardWidth": null,
+        "prose": 288
+      },
+      "375": {
+        "docScroll": 375,
+        "innerWidth": 375,
+        "container": 375,
+        "tracks": 12,
+        "cards": 0,
+        "perRow": 0,
+        "cardWidth": null,
+        "prose": 343
+      },
+      "768": {
+        "docScroll": 768,
+        "innerWidth": 768,
+        "container": 768,
+        "tracks": 12,
+        "cards": 0,
+        "perRow": 0,
+        "cardWidth": null,
+        "prose": 707
+      },
+      "1024": {
+        "docScroll": 1024,
+        "innerWidth": 1024,
+        "container": 992,
+        "tracks": 12,
+        "cards": 0,
+        "perRow": 0,
+        "cardWidth": null,
+        "prose": 736
+      },
+      "1440": {
+        "docScroll": 1440,
+        "innerWidth": 1440,
+        "container": 992,
+        "tracks": 12,
+        "cards": 0,
+        "perRow": 0,
+        "cardWidth": null,
+        "prose": 736
+      }
+    }
+  }
+}
