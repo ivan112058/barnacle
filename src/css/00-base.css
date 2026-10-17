@@ -74,7 +74,30 @@
 }
 
 /* ==============================================================================================
- * 3. The document: page colours and the two font axes.
+ * 3. The states that move — the numbers live here, the rules do not.
+ *
+ * Section 1 declares *what* the numbers are; a component that joins the contract declares *when*
+ * they apply, and does so by reading these slots and nothing else. The shape is one media block
+ * per hoverable control, one guarded state rule per interaction state, and a displacement written
+ * as a `translate()` of the two lift slots — the exact text of which appears in the built artifact
+ * exactly once per component, never in this comment: `tests/browser/mutation-sweep.mjs` patches a
+ * declaration by matching its text and refuses to run when a pattern is not unique.
+ *
+ * That shape is the whole contract, and it is deliberately the component's to write.
+ * Ticket 09 first tried the shorter version — hoisting the hover and press rules themselves into
+ * this file, behind a shared anchor — and measured it in Chrome: the button moved while its
+ * `box-shadow` never left the resting tier. The two rules carried the same specificity, the
+ * component's resting rule came first, and the hover rule's two properties parted ways — every
+ * "the shadow stayed planted" assertion kept passing precisely because both ends were stuck
+ * together. The rules therefore stay with the component that owns the state, and
+ * `scripts/verify-interaction.mjs` guarantees the shape above instead of trusting it: no component
+ * declares a numeric displacement, a literal shadow, or a slot value that is not derived from a
+ * `--bn-*` token. (A `--_` slot is not scope-limited to this file, so a component reading one is
+ * reading the single source — that is what the slots are for.)
+ * ============================================================================================ */
+
+/* ==============================================================================================
+ * 4. The document: page colours and the two font axes.
  *
  * --bn-font-family is the body face; --bn-font-display is the display face and defaults to the
  * same stack, so overriding one token is enough to bring in a display face (spec §6.3, no
@@ -91,7 +114,7 @@ body {
 }
 
 /* ==============================================================================================
- * 4. Headings.
+ * 5. Headings.
  *
  * Display face, heavy weight, tight tracking, and a size scale that halves down the page. The
  * weight is deliberately not a reset to 400: the printed-poster feel of Neubrutalism comes from
@@ -131,7 +154,7 @@ h6 {
 }
 
 /* ==============================================================================================
- * 5. Body copy.
+ * 6. Body copy.
  * ============================================================================================ */
 p {
   margin-block: 0 1em;
@@ -139,7 +162,7 @@ p {
 }
 
 /* ==============================================================================================
- * 6. Lists.
+ * 7. Lists.
  *
  * Square markers at every depth — the UA sheet lowers nested bullets to circles, and an author
  * rule beats the UA sheet by origin, so one rule is enough. Nested lists tighten their rhythm
@@ -164,7 +187,7 @@ li + li {
 }
 
 /* ==============================================================================================
- * 7. Quotation.
+ * 8. Quotation.
  *
  * A logical inline border, so a right-to-left page needs no second rule; the bar is twice the
  * structural border width and comes from --bn-main.
@@ -179,7 +202,7 @@ blockquote {
 }
 
 /* ==============================================================================================
- * 8. Code.
+ * 9. Code.
  *
  * The surface is --bn-secondary-background, which differs from --bn-background in both themes,
  * so a code block never disappears into the page. Inline code keeps a hairline so it does not
@@ -215,7 +238,7 @@ pre code {
 }
 
 /* ==============================================================================================
- * 9. Rule and highlight.
+ * 10. Rule and highlight.
  * ============================================================================================ */
 hr {
   margin-block: 2rem;
@@ -230,7 +253,7 @@ mark {
 }
 
 /* ==============================================================================================
- * 10. Links.
+ * 11. Links.
  *
  * Bare `a` stays a link: underlined, in the page's ink, highlighted with --bn-main on hover.
  * No shadow and no lift here — a page of raised inline links is a usability accident; `.bn-button`
