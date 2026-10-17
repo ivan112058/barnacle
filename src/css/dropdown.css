@@ -1,1 +1,133 @@
-/* dropdown.css — filled by ticket 19 (layer: components) */
+/* dropdown.css — `<bn-dropdown>`: the trigger's popover panel, its items, and the anchoring that
+ * ties the two together. (layer: components, assigned by CSS_MANIFEST in scripts/build.mjs — this
+ * file writes no @layer.)
+ *
+ * The element is an enhancement of markup the author writes (ADR-0002, shallow DOM), so there is
+ * nothing here that a script has to run first: with no JavaScript the panel still opens through
+ * `popovertarget` and still lands under its trigger, because the platform supplies the popover's
+ * implicit anchor. The script only names that anchor explicitly so the placement survives a
+ * programmatic open as well.
+ *
+ * Three decisions worth reading before editing:
+ *
+ *   1. **The panel is positioned by CSS anchor positioning, not by a containing block.** A popover
+ *      lives in the top layer, and a top-layer box resolves `position: absolute` against the
+ *      initial containing block — measured in Chrome 155: `inset-block-start: 100%` put the panel
+ *      at the viewport's bottom edge, nowhere near the trigger. `position-area` against the anchor
+ *      is what actually places it.
+ *   2. **No number in this file.** Displacements, shadow tiers, the ring and the duration are the
+ *      --_ slots declared once in 00-base.css (orchestrator-decisions §4): the items read
+ *      `--_shadow-*` / `--_lift-*` / `--_press-*` and zero them, because a menu item must not lift
+ *      off the panel it is drawn on.
+ *   3. **The item is a button by default.** `.bn-dropdown-item` is usually a `<button>`, which
+ *      button.css has already dressed; this file therefore only *repaints* the surface and neuters
+ *      the geometry through the same slots button.css reads, rather than fighting its rules. An
+ *      `<a class="bn-dropdown-item">` gets the same look from these declarations.
+ */
+
+/* ==============================================================================================
+ * 1. The host and the trigger.
+ * ============================================================================================ */
+bn-dropdown {
+  /* inline-block, so the trigger sizes itself and the element does not claim a whole line. */
+  display: inline-block;
+}
+
+/* The trigger needs nothing of its own: it is the author's `button`, dressed by button.css. */
+
+/* ==============================================================================================
+ * 2. The panel — the author's `[popover]`, in the top layer.
+ *
+ * It stays a child of <bn-dropdown> while it is open (the top layer is not a different tree), so
+ * this descendant selector keeps working — the direct payoff of the shallow-DOM decision.
+ * ============================================================================================ */
+bn-dropdown [popover] {
+  position: fixed;
+  /* `inset: auto` undoes the UA sheet's `inset: 0` (which centres a popover in the viewport) so
+     `position-area` is the only thing deciding where the panel goes. */
+  inset: auto;
+  position-area: bottom span-right;
+  /* A trigger near the bottom of the viewport gets its panel above it rather than off-screen.
+     The UA already tries this for a top-layer popover; stating it keeps the behaviour explicit. */
+  position-try-fallbacks: flip-block, flip-inline;
+  margin: 0;
+
+  inline-size: max-content;
+  min-inline-size: 12rem;
+  max-inline-size: 100vw;
+  padding: 0.25rem;
+
+  background: var(--bn-secondary-background);
+  color: var(--bn-foreground);
+  border-style: solid;
+  border-width: var(--bn-border-width);
+  border-color: var(--_border-rest);
+  border-radius: var(--bn-radius);
+  box-shadow: var(--_shadow-rest);
+  list-style: none;
+}
+
+/* ==============================================================================================
+ * 3. The items — `.bn-dropdown-item`.
+ *
+ * Every geometry slot is zeroed: the panel already carries the shadow and the border, and an item
+ * that lifted on hover would look like it was falling out of the menu. The surface slots are
+ * pointed at --bn-main instead, which is how "highlighted" is spelled without a state class.
+ * ============================================================================================ */
+bn-dropdown .bn-dropdown-item {
+  --_shadow-rest: none;
+  --_shadow-hover: none;
+  --_shadow-press: none;
+  --_lift-x: 0;
+  --_lift-y: 0;
+  --_press-x: 0;
+  --_press-y: 0;
+  --_surface: transparent;
+  --_surface-hover: var(--bn-main);
+  --_surface-press: var(--bn-main);
+
+  display: block;
+  inline-size: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 0;
+  border-radius: var(--bn-radius);
+  background: var(--_surface);
+  color: var(--bn-foreground);
+
+  /* Stated rather than inherited, so a `<button>` item and an `<a>` item are the same object:
+     button.css would otherwise give the button the heading weight and its own font size. */
+  font-family: var(--bn-font-family);
+  font-size: 1rem;
+  font-weight: var(--bn-font-weight-base);
+  line-height: 1.4;
+  text-align: start;
+  text-decoration: none;
+  white-space: normal;          /* a menu label may be long; button.css would keep it on one line */
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  bn-dropdown .bn-dropdown-item:hover {
+    background: var(--bn-main);
+    color: var(--bn-main-foreground);
+  }
+}
+
+/* The two states a menu item can be in on its own: `aria-selected` for a choice list,
+   `aria-checked` for a menu of toggles. Same surface as hover, so a checked item reads as
+   "picked" whether or not the pointer is over it. */
+bn-dropdown .bn-dropdown-item:is([aria-selected="true"], [aria-checked="true"]) {
+  background: var(--bn-main);
+  color: var(--bn-main-foreground);
+  font-weight: var(--bn-font-weight-heading);
+}
+
+/* ==============================================================================================
+ * 4. Motion — declared only where the visitor accepts it (spec §7), never switched off afterwards.
+ *    The panel's entry animation lives in animations.css with the rest of the keyframes.
+ * ============================================================================================ */
+@media (prefers-reduced-motion: no-preference) {
+  bn-dropdown .bn-dropdown-item {
+    transition: background-color var(--_motion), color var(--_motion);
+  }
+}
