@@ -63,18 +63,38 @@ body.site-body {
   line-height: 1.6;
 }
 
-a {
+/*
+ * No `!important` anywhere, and no cascade layer either: this file is loaded with the library,
+ * and every rule in it beats the library's layers by origin (an unlayered author declaration
+ * always wins over a layered one — ADR-0006). That is exactly what makes the rule below a rule.
+ *
+ * THE PREVIEW EXCLUSION. `.site-demo__panel--preview` is not the site: it is the library's own
+ * rendering, injected verbatim from a fence by static/site.js. Every site rule that styles an
+ * element the library also styles therefore carries
+ *
+ *     :not(.site-demo__panel--preview *)
+ *
+ * and nothing else does. The intent in one line: **the site styles its own prose and chrome; a
+ * preview panel is the library's**, so the panel shows what a user of the library would see
+ * instead of the docs site's own table, code, quote or link. The exclusion is on the *element*
+ * rather than on the parent, because prose is not flat: a table inside a list item, or inline
+ * `code` inside a paragraph, is as much prose as a top-level one, and `> ` would drop those.
+ * The code panel is deliberately *not* excluded: it holds the original seite `<pre>`, which is the
+ * docs site's code block and must keep the docs site's frame.
+ */
+
+a:not(.site-demo__panel--preview *) {
   color: inherit;
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 2px;
 }
 
-a:hover {
+a:hover:not(.site-demo__panel--preview *) {
   background-color: var(--site-accent);
 }
 
-:focus-visible {
+:focus-visible:not(.site-demo__panel--preview *) {
   outline: var(--site-line) solid var(--site-ink);
   outline-offset: 2px;
 }
@@ -245,19 +265,22 @@ html:not([data-site-js]) [data-site-theme-toggle] {
   margin-top: 0;
 }
 
-.site-prose h2 {
+/* Every rule in this block that styles an element the library also styles carries the preview
+   exclusion explained at the top of this file. The site's own prose is unchanged: a table nested in
+   a list item, inline `code` inside a paragraph and a top-level one all still read these. */
+.site-prose h2:not(.site-demo__panel--preview *) {
   margin-top: 2.5rem;
   padding-bottom: 0.25rem;
   border-bottom: var(--site-line) solid var(--site-ink);
   font-size: 1.5rem;
 }
 
-.site-prose h3 {
+.site-prose h3:not(.site-demo__panel--preview *) {
   margin-top: 2rem;
   font-size: 1.25rem;
 }
 
-.site-prose code {
+.site-prose code:not(.site-demo__panel--preview *) {
   padding: 0.1em 0.35em;
   background: var(--site-surface);
   border: 1px solid var(--site-ink);
@@ -265,7 +288,7 @@ html:not([data-site-js]) [data-site-theme-toggle] {
   font-size: 0.9em;
 }
 
-.site-prose pre {
+.site-prose pre:not(.site-demo__panel--preview *) {
   overflow-x: auto;
   padding: 1rem;
   background: var(--site-surface);
@@ -273,14 +296,14 @@ html:not([data-site-js]) [data-site-theme-toggle] {
   box-shadow: 4px 4px 0 0 var(--site-ink);
 }
 
-.site-prose pre code {
+.site-prose pre code:not(.site-demo__panel--preview *) {
   padding: 0;
   background: none;
   border: 0;
   font-size: 0.875rem;
 }
 
-.site-prose blockquote {
+.site-prose blockquote:not(.site-demo__panel--preview *) {
   margin-inline: 0;
   padding: 0.75rem 1rem;
   background: var(--site-surface);
@@ -288,19 +311,26 @@ html:not([data-site-js]) [data-site-theme-toggle] {
   box-shadow: 4px 4px 0 0 var(--site-ink);
 }
 
-.site-prose table {
+/*
+ * Markdown tables in the prose. The site's own table styling stays on `.site-prose` descendants
+ * only, so the table inside a preview panel is measured and painted by the library: its border
+ * model, its one-owner-per-seam borders, its numeric-column alignment and its header band all come
+ * from the library's stylesheet, never from this file. Scripted in scripts/verify-table.mjs, in both
+ * directions.
+ */
+.site-prose table:not(.site-demo__panel--preview *) {
   width: 100%;
   border-collapse: collapse;
 }
 
-.site-prose th,
-.site-prose td {
+.site-prose th:not(.site-demo__panel--preview *),
+.site-prose td:not(.site-demo__panel--preview *) {
   padding: 0.5rem 0.75rem;
   border: 2px solid var(--site-ink);
   text-align: left;
 }
 
-.site-prose th {
+.site-prose th:not(.site-demo__panel--preview *) {
   background: var(--site-accent);
 }
 
