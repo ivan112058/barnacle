@@ -179,8 +179,10 @@ const SKIP_BROWSER = argv.includes('--no-browser');
 /* ========================================= helpers ========================================= */
 
 function npmRun(script) {
-  // `npm` on Windows is a .cmd shim, so the shell is required (same as scripts/verify-deploy.mjs).
-  const result = spawnSync(`npm run ${script}`, {
+  // The shell is only needed on Windows, where npm is a .cmd shim. The arguments stay an array so
+  // that POSIX spawns `npm` itself — a single command string with shell:false would look for a
+  // binary literally named "npm run build" and fail with ENOENT on the Linux CI runner.
+  const result = spawnSync('npm', ['run', script], {
     cwd: ROOT,
     encoding: 'utf8',
     shell: process.platform === 'win32',

@@ -169,10 +169,11 @@ function locateSeite() {
   return null;
 }
 
-/** `npm run build` is what CI runs; on Windows npm is a .cmd shim, so the shell is needed. */
+/** `npm run build` is what CI runs. The shell is only needed on Windows (npm is a .cmd shim);
+ *  the arguments stay an array so POSIX spawns `npm` itself instead of a binary named
+ *  "npm run build", which is what made the Linux CI runner fail with ENOENT. */
 function npmRun(script) {
-  const command = `npm run ${script}`;
-  const result = spawnSync(command, {
+  const result = spawnSync('npm', ['run', script], {
     cwd: ROOT,
     encoding: 'utf8',
     shell: process.platform === 'win32',
