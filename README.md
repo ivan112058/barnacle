@@ -2,7 +2,9 @@
 
 A semantic-first Neubrutalism UI library in pure CSS. Zero runtime dependencies, no shadow
 DOM, no class-name API: you write the HTML element that already means what you mean and
-Barnacle styles it.
+Barnacle styles it. The trade-off is deliberate and it belongs in the first paragraph:
+Barnacle is a global stylesheet, so including it takes over the whole page and it cannot be
+adopted in part.
 
 > **Status: v1 feature-complete.** All twenty components, the base and theme layers, the
 > documentation site, the bilingual edition and the GitHub Pages workflow are in place, and
