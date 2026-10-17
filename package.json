@@ -26,6 +26,7 @@
     "verify:static": "node scripts/verify-static.mjs",
     "verify:table": "node scripts/verify-table.mjs",
     "verify:switch": "node scripts/verify-switch.mjs",
+    "verify:form": "node scripts/verify-form.mjs",
     "verify:layout": "node scripts/verify-layout.mjs"
   },
   "dependencies": {},

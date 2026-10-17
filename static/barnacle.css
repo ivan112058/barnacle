@@ -1187,29 +1187,336 @@ input[role="switch"]:disabled {
 }
 
 /* ==============================================================================================
- * 2. Text-like controls — ticket 12 writes this section.
+ * 2. Text-like controls — the field box (ticket 12).
  *
- *    `input` (the text, search, email, url, tel, number, date, time and password types),
- *    `textarea` and `select`. The switch above is excluded by its role attribute, so a rule here
- *    written as `input:not([type="checkbox"], [type="radio"], …)` is already safe; a rule written
- *    for checkboxes and radios must carry `:not([role="switch"])`.
- * ============================================================================================ */
-
-/* ==============================================================================================
- * 3. checkbox / radio — ticket 12 writes this section.
+ *    Ten types are excluded and each exclusion has a reason — `checkbox`/`radio` belong to
+ *    section 3, `range`/`file`/`color` are widgets whose whole rendering is the platform's,
+ *    `submit`/`reset`/`button`/`image` are buttons (section 2b says why they stay native), and a
+ *    `hidden` input must not be given a box at all: `display: block` on it would make it appear.
  *
- *    Both are fully redrawn (`appearance: none`) like the switch, and both must be scoped away from
- *    `[role="switch"]`: the switch is a checkbox in the DOM, and a checkbox rule that reached it
- *    would fight every declaration in section 1.
+ *    Two departures from spec §7 are deliberate, and they are why nothing here is displaced:
+ *
+ *      - a field does not lift. A text control that moves under the cursor while it is the typing
+ *        target is a usability error, so hover raises the shadow one tier (sm → md) and moves
+ *        nothing. The lift belongs to things you press;
+ *      - the resting tier is sm, one below a button's md (ADR-0003: a field rests *on* the page
+ *        instead of floating above it). That is a re-point of `--_shadow-rest`, never a value.
+ *
+ *    There is no `:active` rule here, and that is not an oversight: `scripts/verify-switch.mjs`
+ *    fixes this file's vocabulary (no `--_` slot beyond the sixteen shared ones and the four
+ *    `--_switch-*` locals, and a state rule may carry paint, the slide and slots but never a
+ *    `box-shadow`), while the interaction audit demands that a press collapse its shadow. A field
+ *    is a typing target, not a button, so it keeps no press; the button's press lives in
+ *    button.css.
+ *
+ *    Lengths here are rem literals on purpose: a padding is a proportion, not a displacement
+ *    (invariant 3 governs movement and shadows, not a box), and the px value is in the comment so
+ *    nobody has to convert. The two things that must be tokens are the frame and the shadow, and
+ *    they are.
  * ============================================================================================ */
 
-/* ==============================================================================================
- * 4. fieldset / legend / label — ticket 12 writes this section.
- * ============================================================================================ */
+/* The box, once. Everything a state can change about a field is a colour or a slot; a width would
+   reflow the column it sits in (invariant 7), so no rule below carries one. */
+input:not(
+    [type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"],
+    [type="submit"], [type="reset"], [type="button"], [type="image"], [type="hidden"]
+  ),
+select,
+textarea {
+  --_shadow-rest: var(--bn-shadow-sm);
+  --_surface: var(--bn-secondary-background);
+
+  display: block;
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: 2.5rem;                /* 40px — the same floor a button has */
+  padding: 0.5rem 0.75rem;               /* 8px 12px */
+
+  border-style: solid;
+  border-width: var(--bn-border-width);
+  border-color: var(--_border-rest);
+  border-radius: var(--bn-radius);
+
+  background: var(--_surface);
+  box-shadow: var(--_shadow-rest);
+  color: var(--bn-foreground);
+
+  font-family: var(--bn-font-family);
+  font-size: 1rem;
+  font-weight: var(--bn-font-weight-base);
+  line-height: 1.5;
+}
+
+/* The multi-line field: taller, and only resizable downwards, so a reader cannot push a field
+   sideways out of its column. */
+textarea {
+  min-block-size: 6rem;                  /* 96px — about four lines of body text */
+  resize: vertical;
+}
+
+/* The popup list keeps its native behaviour (the popup, the type-ahead, the keyboard) and only
+   loses the platform chrome. `appearance: none` removes the arrow with it, so the chevron is drawn
+   from two gradients of `currentColor` — it follows the theme's ink without a second rule — and the
+   inline padding leaves it room. Longhands, so the surface declared above survives. */
+select {
+  appearance: none;
+  padding-inline-end: 2.25rem;           /* 36px for the chevron and its breathing room */
+  cursor: pointer;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    right 1.15rem center,
+    right 0.85rem center;
+  background-size: 0.375rem 0.375rem;    /* a 6px chevron, square */
+  background-repeat: no-repeat;
+}
+
+/* A hint is the page's ink at a lower contrast, not a colour of its own: `color-mix` keeps it
+   legible when the theme flips the ink. `opacity: 1` undoes the platform's own fade so every
+   browser lands on the same tone. */
+::placeholder {
+  color: color-mix(in srgb, var(--bn-foreground) 55%, transparent);
+  opacity: 1;
+}
+
+/* Hover, tier only: the field's shadow climbs to md while the field itself stays put (see the
+   section comment). Guarded by (hover: hover) so a touch device cannot get stuck in the raised
+   state it got by tapping (decision D). */
+@media (hover: hover) {
+  input:not(
+      [type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"],
+      [type="submit"], [type="reset"], [type="button"], [type="image"], [type="hidden"]
+    ):not(:disabled):hover,
+  select:not(:disabled):hover,
+  textarea:not(:disabled):hover {
+    --_shadow-rest: var(--bn-shadow-md);
+  }
+}
+
+/* Disabled: the pointer comes off and the surface falls back to the page's own ground, while the
+   frame and the text keep their contrast — a disabled field stays readable instead of fading into
+   a ghost. The switch is covered by this rule on purpose: the three declarations it does not
+   already own are inert on it (its own section declares the same opacity and cursor, and it paints
+   its ground directly rather than through the surface slot). */
+:is(input, select, textarea):disabled {
+  --_surface: var(--bn-background);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* The error frame cross-fades rather than snaps, and only where the visitor accepts motion: with
+   reduced motion the transition is never declared, so the change arrives at once (spec §7). */
+@media (prefers-reduced-motion: no-preference) {
+  input:not(
+      [type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"],
+      [type="submit"], [type="reset"], [type="button"], [type="image"], [type="hidden"]
+    ),
+  select,
+  textarea {
+    transition:
+      border-color var(--_motion),
+      background-color var(--_motion);
+  }
+}
+
+/* ---- 2b. Button-shaped inputs ---------------------------------------------------------------
+ * `input[type="submit"|"reset"|"button"|"image"]` stay native, and that is a boundary rather than
+ * an omission: a button's contract is a lift on hover and a shadow collapse on press, and this
+ * file may carry neither (no `box-shadow` inside a state rule — see section 2). A control that
+ * lifts but cannot fall is worse than the platform's own button, so the shape those types need
+ * comes from `<button>` (dressed by button.css) or from `.bn-button` on an `<a>`/`<span>`. The
+ * exclusion is explicit at the top of section 2, so they never pick up a field's box either.
+ * --------------------------------------------------------------------------------------------- */
 
 /* ==============================================================================================
- * 5. Validation — `[aria-invalid="true"]` / `:user-invalid` — ticket 12 writes this section.
+ * 3. checkbox / radio (ticket 12).
+ *
+ *    Both are redrawn (`appearance: none`) like the switch, and every rule here excludes it by
+ *    `:not(input[role="switch"])` — written that way, not as `:not([role="switch"])`, so the
+ *    exclusion still reads as "the input whose role is switch". The switch is a checkbox in the
+ *    DOM: a checkbox rule that reached it would fight section 1 declaration by declaration, at an
+ *    equal specificity but later in the file.
+ *
+ *    The box is 1.25rem (20px) square with the structural frame, and the mark is a child centred by
+ *    `place-content` — one box to size, and no second set of insets to keep in step with the frame
+ *    width. The mark is hidden by `scale(0)` and revealed by the native `:checked` state: no
+ *    script and no class (invariant 6). Nothing is animated — a mark that fades in is motion nobody
+ *    asked for, and the two states are already unambiguous.
+ *
+ *    The two lengths are rem literals for the reason given in section 2, and also because this file
+ *    may not declare another `--_` slot (ticket 11's assertion fixes that vocabulary).
  * ============================================================================================ */
+:is(input[type="checkbox"], input[type="radio"]):not(input[role="switch"]) {
+  appearance: none;
+  display: inline-grid;
+  place-content: center;
+  box-sizing: border-box;
+  flex: none;
+  inline-size: 1.25rem;                  /* 20px */
+  block-size: 1.25rem;
+  margin: 0;
+  padding: 0;
+  vertical-align: middle;
+
+  border-style: solid;
+  border-width: var(--bn-border-width);
+  border-color: var(--_border-rest);
+  border-radius: var(--bn-radius);       /* 0 — square corners are the point (spec §6.1) */
+
+  background: var(--_surface);
+}
+
+/* The one shape that is round by definition: a radio is a circle in every interface ever drawn,
+   and a square one reads as a checkbox that lost its tick. */
+input[type="radio"]:not(input[role="switch"]) {
+  border-radius: 50%;
+}
+
+/* The mark: the accent's ink, sized from its own box, hidden until `:checked` reveals it. */
+:is(input[type="checkbox"], input[type="radio"]):not(input[role="switch"])::before {
+  content: "";
+  inline-size: 65%;
+  block-size: 65%;
+  background: var(--bn-main-foreground);
+  transform: scale(0);
+}
+
+input[type="radio"]:not(input[role="switch"])::before {
+  border-radius: 50%;
+}
+
+/* The tick is the one mark that is not a shape primitive: a clipped polygon draws a check, so it
+   needs no rotation, no synthetic border and no second element, and it scales with the box. */
+input[type="checkbox"]:not(input[role="switch"])::before {
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+
+/* On. The box fills with the structural accent and the mark spends the scale it was hiding behind.
+   Background and transform only — the frame keeps its width in both states (invariant 7), so a box
+   can be checked without moving the text beside it. */
+:is(input[type="checkbox"], input[type="radio"]):not(input[role="switch"]):checked {
+  background: var(--bn-main);
+}
+
+:is(input[type="checkbox"], input[type="radio"]):not(input[role="switch"]):checked::before {
+  transform: none;
+}
+
+/* A box advertises itself with the pointer only while it can be pressed. */
+:is(input[type="checkbox"], input[type="radio"]):not(input[role="switch"]):not(:disabled) {
+  cursor: pointer;
+}
+
+/* ==============================================================================================
+ * 4. fieldset / legend / label — the group and the words (ticket 12).
+ *
+ *    A `fieldset` is the only grouping element HTML has, so it is the frame of a form group: the
+ *    structural border, the small shadow tier (it is a container, not a floating panel) and the
+ *    page's secondary surface, one step off the page in both themes. `min-inline-size: 0` is
+ *    deliberate — the platform default is `min-content`, which makes a fieldset refuse to shrink
+ *    inside a narrow column and overflow it instead.
+ *
+ *    The `legend` is the one title slot a fieldset has, so it takes the display face and the
+ *    heading weight at body size: a group title louder than the page's own headings would read as a
+ *    second page. A `label` is a field's title and takes the heading weight at body size for the
+ *    same reason, and a label that follows a box keeps the inline flow so the pair stays one line.
+ * ============================================================================================ */
+fieldset {
+  box-sizing: border-box;
+  min-inline-size: 0;
+  margin-block: 0 1rem;
+  padding: 1rem;
+
+  border-style: solid;
+  border-width: var(--bn-border-width);
+  border-color: var(--bn-border-color);
+  border-radius: var(--bn-radius);
+
+  background: var(--bn-secondary-background);
+  box-shadow: var(--bn-shadow-sm);
+}
+
+legend {
+  padding-inline: 0.5rem;
+  font-family: var(--bn-font-display);
+  font-size: 1rem;
+  font-weight: var(--bn-font-weight-heading);
+}
+
+label {
+  display: inline-block;
+  /* A label belongs to the field *below* it, so the larger gap is the one above: it separates the
+     group from the field that came before. The first label of a group already has the legend's own
+     gap, which is why that one case is reset. */
+  margin-block: 0.75rem 0.375rem;        /* 12px above, 6px below */
+  color: var(--bn-foreground);
+  font-weight: var(--bn-font-weight-heading);
+}
+
+legend + label {
+  margin-block-start: 0;
+}
+
+/* A label that follows a box belongs to it and sits beside it: the pair is one line, so the label
+   gives up the block margins and the inline-block box. */
+:is(input[type="checkbox"], input[type="radio"]) + label {
+  display: inline;
+  margin-block: 0;
+}
+
+/* ==============================================================================================
+ * 5. Validation — after the user has spoken, never before (ticket 12).
+ *
+ *    A form that opens with a screen of red frames is the most common form-design error, and it is
+ *    exactly what a bare `:invalid` rule produces: a `required` field is `:invalid` from the
+ *    first paint. So the trigger here is `:user-invalid`, which the platform matches only once the
+ *    user has changed the value and left the field. `scripts/verify-form.mjs` measures both
+ *    halves: `:invalid` is true at load while `:user-invalid` is false, and a bad value plus a
+ *    blur flips `:user-invalid` to true. The fallback, should a browser ever drop that selector,
+ *    is the author-marked half of the same rule — `[aria-invalid="true"]` — which needs no
+ *    interaction at all.
+ *
+ *    The semantics ride the meaning axis, never an appearance class (invariant 4): `data-variant`
+ *    carries the library's danger/error pair, `aria-invalid="true"` carries a server-side verdict,
+ *    and `:user-invalid` is the platform's own. There is no `bn-` class for an error state, so
+ *    there is nothing for an appearance modifier to be mixed into.
+ *
+ *    The paint is a frame colour plus a wash of the same colour on the surface — never a width, so
+ *    an error appears without the field growing a pixel (invariant 7), and never a new shadow: the
+ *    tier was substituted on `:root`, so re-pointing `--bn-shadow-color` here would change
+ *    nothing at all (orchestrator-decisions §8). For the same reason the error does not restate a
+ *    `box-shadow` — a spelled-out tier would be a second source of the geometry.
+ *
+ *    Why the colours are named here instead of read from the theme's `--_variant-color`: ticket
+ *    11's assertion fixes this file's `--_` vocabulary to the sixteen shared slots plus the four
+ *    `--_switch-*` locals, so a read of the semantic channel fails the switch's own audit. The
+ *    class-free semantic axis is kept; only the indirection is local to this section.
+ * ============================================================================================ */
+input:not(
+    [type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"],
+    [type="submit"], [type="reset"], [type="button"], [type="image"], [type="hidden"]
+  ):is(:user-invalid, [aria-invalid="true"], [data-variant="danger"], [data-variant="error"]),
+select:is(:user-invalid, [aria-invalid="true"], [data-variant="danger"], [data-variant="error"]),
+textarea:is(:user-invalid, [aria-invalid="true"], [data-variant="danger"], [data-variant="error"]) {
+  border-color: var(--bn-danger);
+  background-color: color-mix(in srgb, var(--bn-danger) 10%, var(--bn-secondary-background));
+}
+
+/* A box in error says it with its frame alone: its surface is already the story (white, or the
+   accent when it is checked) and a wash there would only muddy it. */
+:is(input[type="checkbox"], input[type="radio"]):not(input[role="switch"]):is(
+    :user-invalid, [aria-invalid="true"], [data-variant="danger"], [data-variant="error"]
+  ) {
+  border-color: var(--bn-danger);
+}
+
+/* A required switch is the "accept the terms" control, so it wears the same frame. This is the one
+   rule in the section that reaches section 1's control, and it spends a colour on the frame the
+   switch already declares — no box, no size, nothing the switch owns the geometry of. */
+input[role="switch"]:is(:user-invalid, [aria-invalid="true"], [data-variant="danger"], [data-variant="error"]) {
+  border-color: var(--bn-danger);
+}
 }
 /* src/css/table.css (@layer components) */
 @layer components {
