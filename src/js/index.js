@@ -15,6 +15,7 @@
  */
 
 import { createNamespace } from './namespace.js';
+import { BnTabs } from './tabs.js';
 
 const isBrowser = typeof document !== 'undefined' && typeof window !== 'undefined';
 
@@ -22,7 +23,7 @@ const isBrowser = typeof document !== 'undefined' && typeof window !== 'undefine
 const bn = isBrowser ? createNamespace(window) : createNamespace({});
 
 // Ticket 19: bn.register('bn-dropdown', BnDropdown);
-// Ticket 20: bn.register('bn-tabs', BnTabs);
+bn.register('bn-tabs', BnTabs);
 // Ticket 21: bn.register('bn-taginput', BnTagInput);
 
 export default bn;
