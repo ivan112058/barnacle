@@ -1,8 +1,8 @@
 name: Deploy to GitHub Pages
 
-# seite's own GitHub Pages workflow (seite 0.20.1 `seite init --deploy-target github-pages`,
-# see D:\code\barnacle-notes\seite-findings.md §9) with this repository's build chain inserted
-# ahead of it. No gh CLI: only actions/upload-pages-artifact and actions/deploy-pages.
+# The workflow seite 0.20.1 writes itself (`seite init --deploy-target github-pages`) with this
+# repository's build chain inserted ahead of it. No gh CLI: only actions/upload-pages-artifact
+# and actions/deploy-pages.
 on:
   push:
     branches: [main]
@@ -32,8 +32,8 @@ jobs:
           node-version: '26'
           cache: npm
 
-      # install.sh puts the binary in ~/.local/bin and does NOT touch PATH (seite-findings
-      # §9.1), so the directory has to be exported explicitly or every later step fails with
+      # Measured on seite 0.20.1: install.sh puts the binary in ~/.local/bin and does NOT touch
+      # PATH, so the directory has to be exported explicitly or every later step fails with
       # "seite: command not found".
       - name: Install seite (pinned to the local version)
         run: |
@@ -84,9 +84,9 @@ jobs:
         run: git diff --exit-code -- content/
 
       # --strict turns broken-link / missing-asset warnings into build failures, which is what
-      # this repo verifies locally (orchestrator-decisions §6). `seite upgrade --check` is
-      # deliberately never run: it always exits non-zero because it wants to write the agent
-      # scaffolding (orchestrator-decisions §7).
+      # this repo verifies locally by running the same two commands (seite build / seite check,
+      # both with --strict). `seite upgrade --check` is deliberately never run: it always exits
+      # non-zero because it wants to write the agent scaffolding.
       - name: Build the site
         run: seite build --strict
 
