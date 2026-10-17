@@ -1321,17 +1321,40 @@ try {
     await check('the jsDelivr and raw.githubusercontent mirrors serve the committed artifacts', async () => {
       const problems = [];
       const rows = [];
+      /*
+       * raw.githubusercontent.com drops connections from some networks often enough that a single
+       * attempt reports a healthy mirror as broken (measured: 200/162694B on one run, three
+       * transport errors in a row on the next). Only transport errors are retried — a 404, a wrong
+       * byte count or a mismatched body still fails on the first response, because those are the
+       * conditions this check exists to catch.
+       */
+      const fetchWithRetries = async (url, attempts = 3) => {
+        let lastError;
+        for (let attempt = 1; attempt <= attempts; attempt += 1) {
+          try {
+            const response = await fetch(url, {
+              redirect: 'follow',
+              signal: AbortSignal.timeout(30_000),
+            });
+            return { response, buffer: Buffer.from(await response.arrayBuffer()) };
+          } catch (error) {
+            lastError = error;
+            if (attempt < attempts) await new Promise((resolve) => setTimeout(resolve, 750 * attempt));
+          }
+        }
+        throw lastError;
+      };
       for (const prefix of [CDN_PREFIX, RAW_PREFIX]) {
         for (const file of ARTIFACT_SET) {
           const url = `${prefix}${file}`;
           let response;
+          let buffer;
           try {
-            response = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(30_000) });
+            ({ response, buffer } = await fetchWithRetries(url));
           } catch (error) {
-            problems.push(`${url} → ${error.message}`);
+            problems.push(`${url} → ${error.message} (3 attempts)`);
             continue;
           }
-          const buffer = Buffer.from(await response.arrayBuffer());
           const committed = fs.readFileSync(abs(file));
           rows.push(`${response.status} ${url} ${buffer.length}B`);
           if (response.status !== 200) problems.push(`${url} → ${response.status}`);
