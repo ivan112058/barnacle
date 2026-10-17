@@ -110,14 +110,13 @@ npm run verify:release -- --live  # the same gate, with the HTTP half pointed at
 ```
 
 `verify:release` (`scripts/verify-release.mjs`) is the v1 acceptance gate (ticket 24). Offline it
-rebuilds `static/` and
-`dist/`, crawls the whole site from `/barnacle/` in both languages (BFS over `<a href>`, no
-`file://`, no hand-written list of URLs), requests every asset, checks that the crawl reaches
-every page seite published, that every bilingual page switches to its own counterpart with
-matching `hreflang`, that dark mode holds on every page in real Chrome, that the per-file
-consumption recipe below computes the same styles as the whole artifact, that the README's
-CDN and raw URLs point at files that exist, and that the generated Chinese pages match their
-English masters. `--no-build` reuses the existing `dist/`, `--no-browser` skips the Chrome
+rebuilds `static/` and `dist/`, crawls the whole site from `/barnacle/` in both languages (BFS
+over `<a href>`, no `file://`, no hand-written list of URLs), requests every asset, checks that
+the crawl reaches every page seite published, that every bilingual page switches to its own
+counterpart with matching `hreflang`, that dark mode holds on every page in real Chrome, that the
+per-file consumption recipe below computes the same styles as the whole artifact, that the
+README's CDN and raw URLs point at files that exist, and that the generated Chinese pages match
+their English masters. `--no-build` reuses the existing `dist/`, `--no-browser` skips the Chrome
 pass.
 
 `--live` (or `BN_LIVE=1`) runs the same gate with the HTTP half pointed at
@@ -140,16 +139,17 @@ pages render exactly one H2 (the one the template supplies), and the header them
 does not start with `<` stays a plain code block.
 
 The last five checks drive real Chrome over the built site on `/barnacle/`. They need
-`playwright-core`, which is deliberately **not** a dependency of this repository (ticket 08
-owns that decision), so install it for a local run and nothing is written to `package.json`:
+`playwright-core`, which **is** a devDependency (ticket 08 pinned it to 1.64.1), so `npm ci`
+installs it; they then drive the Chrome installed on the machine (`channel: 'chrome'`) and
+download no browser of their own:
 
 ```powershell
-npm i --no-save playwright-core@1.64.1
+npm ci
 node scripts/verify-demo.mjs          # or: npm run verify:demo -- --no-browser
 ```
 
-Without the module the browser checks report `SKIP` and the static checks still gate the exit
-code.
+Without the module — or without a system Chrome — the browser checks report `SKIP` and the static
+checks still gate the exit code. `npm run verify:release` follows the same rule.
 
 ## Deployment
 

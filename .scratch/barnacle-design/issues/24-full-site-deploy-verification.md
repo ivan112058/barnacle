@@ -41,7 +41,7 @@
 | ticket 勾选项 | 结论 | 实测证据（命令 → 数字） |
 |---|---|---|
 | 完整站点在 `https://ivan112058.github.io/barnacle/` 上可访问 | **未验证（站点未上线）** | `--live`：`GET https://ivan112058.github.io/barnacle/` → **404**，`text/html; charset=utf-8`，9115 B |
-| 从首页出发逐链接走通全部页面（中英各一遍），无死角 404 | 离线通过 | BFS 从 `/barnacle/` 跟随 `<a href>`：52 个 URL → **46 个不同页面（23 en + 23 zh）+ 4 个非页面 URL**，0 × 404；爬到的页面集合 == `dist/` 的 HTML 集合（46 = 46，两个 404 页不参与：没有任何链接指向它们，但它们确实是文件） |
+| 从首页出发逐链接走通全部页面（中英各一遍），无死角 404 | 离线通过 | BFS 从 `/barnacle/` 跟随 `<a href>`：52 个 URL = **46 个不同页面（23 en + 23 zh）** + 2 个同一页面的非规范形式 URL（`/components/index`，见下文「发现的问题」）+ 4 个非页面 URL（Usage 页用 `<a>` 直链的产物）；0 × 404；爬到的页面集合 == `dist/` 的 HTML 集合（46 = 46；两个 404 页不参与，因为没有任何链接指向它们，但它们确实是文件） |
 | 全部资源（CSS、JS、字体、图片）在子路径下均返回 200 | 离线通过 | HTML 里 5 个资源（`favicon.svg`、`barnacle.css`、`barnacle.js`、`style.css`、`site.js`）+ 4 个被 Usage 页以 `<a>` 直链的产物 = 全部 200，Content-Type 与扩展名族一致；CSS 里 `url()` 引用 **0 个**（库不带 webfont/位图，这一类将来出现时同一断言会覆盖）；六个 `static/` 文件经 HTTP 取回与仓库文件**逐字节相同** |
 | 中英文页面互相切换正确，`hreflang` 与 23 号票结论一致 | 离线通过 | 46 页每页 1 个切换链接、指向**本页的对端**且对端确实在页面集合里（双向，不读硬编码清单）；`<html lang>` 与 URL 语言一致；每页 3 条 alternates（en / zh / x-default），x-default == en，三者都指向已发布页面 —— 与 23 号票的实测结论一致（sitemap 的 alternates 仍由 `verify:i18n` 负责，本脚本不重复） |
 | 暗色模式在完整站点上逐页成立 | 离线通过 | 真 Chrome 155.0.8059.82，**全部 46 页**（含 19 个组件页 × 中英 = 38 页）：`html[data-theme="dark"]` 后 body 背景 `rgb(26, 26, 26)`、`--bn-foreground` → `rgb(255, 253, 245)`、`--bn-shadow-md` → `rgb(255, 253, 245) 4px 4px 0px 0px`；每页再切回 `light` 做对照（必须回到 `rgb(255, 253, 245)` / `rgb(0, 0, 0)`，否则就是「读了个常量」）；0 console error / 0 pageerror / 0 失败请求 |
