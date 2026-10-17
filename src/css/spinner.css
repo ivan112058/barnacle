@@ -1,1 +1,78 @@
-/* spinner.css — filled by ticket 10 (layer: components) */
+/* spinner.css — the loading indicator, and the default look of a status region.
+ * (layer: components, assigned by CSS_MANIFEST in scripts/build.mjs — this file writes no @layer.)
+ *
+ * The anchor is `[role="status"]` (spec §8). It is the same anchor the skeleton uses, so the two
+ * files have to tell each other apart, and orchestrator decision §3C settles which way round:
+ * **a bare `[role="status"]` is the spinner**, and `.bn-skeleton` overrides it. The reasoning is
+ * accessibility-first: a status region is a live region, a live region on a page is nearly always
+ * saying "working on it", and the shape it should take by default is therefore the one that says
+ * "working on it". The override is spelled out with `:not(.bn-skeleton)` rather than left to file
+ * order, so the two components cannot be swapped by an edit to scripts/build.mjs's manifest.
+ *
+ * The accessible name is the author's job and CSS cannot supply it: a 24px ring says nothing to a
+ * screen reader. Give the element `aria-label` (or, once Utilities lands, a `.bn-visually-hidden`
+ * text child) — never visible text, which would burst out of a 24px box.
+ *
+ * Three decisions.
+ *
+ *   1. The ring is drawn with a border: three sides in a translucent mix of the page's ink, one side
+ *      in the accent colour. The mix is `color-mix` of a token, never a literal, so the track flips
+ *      with the theme (a `#ccc` track would vanish on the dark background); the stroke is
+ *      two thirds of the structural border width, of the same single value, so changing
+ *      --bn-border-width rescales the ring too. `border-radius: 50%` is the library's second
+ *      deliberate circle, after `input[type="radio"]` — a ring is round by meaning, and --bn-radius
+ *      still governs every box.
+ *   2. The rotation is declared only inside `@media (prefers-reduced-motion: no-preference)`
+ *      (spec §7), so a visitor who asked for less motion gets no animation rule at all. What is
+ *      left is a still, incomplete ring: the missing arc is the loading glyph, so the reduced case
+ *      still says "loading" instead of saying nothing. A reduce block that stopped a running
+ *      animation afterwards would be the rejected form.
+ *   3. `rotate` is used as its own property, not `transform`. The shared interaction geometry owns
+ *      `transform` for hover and press; a spinner that spun `transform` would be one rule away from
+ *      fighting it, and it can sit inside a button or a card without touching their geometry.
+ *
+ * The 700ms period is the one duration in this file. There is no token for an animation period —
+ * --bn-transition (150ms) is the interaction duration, and a ring turning six times a second reads
+ * as a glitch rather than as progress — so the period is stated here, next to the animation it
+ * belongs to, and nothing else in the library depends on it.
+ */
+
+/* ==============================================================================================
+ * 1. The ring — drawn unconditionally, so reduced motion still has something to show.
+ * ============================================================================================ */
+:is([role="status"], .bn-spinner):not(.bn-skeleton) {
+  --_size: 1.5rem;
+  --_stroke: calc(var(--bn-border-width) * 2 / 3);
+
+  display: inline-block;
+  box-sizing: border-box;                /* --_size is the ring's outside, not its hole */
+  inline-size: var(--_size);
+  block-size: var(--_size);
+  vertical-align: middle;                /* sits on the text baseline beside "Loading…" */
+
+  border-style: solid;
+  border-width: var(--_stroke);
+  border-color: color-mix(in srgb, var(--bn-foreground) 20%, transparent);   /* the track */
+  border-block-start-color: var(--_variant-color, var(--bn-main));           /* the arc */
+  border-radius: 50%;
+}
+
+/* A variant needs no rule of its own: `[data-variant]` in 01-theme.css publishes --_variant-color,
+ * the arc above already reads it with --bn-main as the neutral fallback, and the five accents come
+ * from card.css. Nothing else about the ring changes, and no state rule exists: a spinner has no
+ * hover, no press and no focus of its own. */
+
+/* ==============================================================================================
+ * 2. Motion — declared where the visitor accepts it, and nowhere else.
+ * ============================================================================================ */
+@keyframes bn-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :is([role="status"], .bn-spinner):not(.bn-skeleton) {
+    animation: bn-spin 700ms linear infinite;
+  }
+}

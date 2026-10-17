@@ -684,15 +684,348 @@ a {
 }
 /* src/css/card.css (@layer components) */
 @layer components {
-/* card.css — filled by ticket 10 (layer: components) */
+/* card.css — the card, and the library's accent axis.
+ * (layer: components, assigned by CSS_MANIFEST in scripts/build.mjs — this file writes no @layer.)
+ *
+ * Four things are settled here.
+ *
+ *   1. The element is the anchor (ADR-0001). A bare <article> is a card — the page's second surface,
+ *      the canonical 1.5rem of padding, the structural border and the md shadow tier — and no class
+ *      is invented for it, because spec §5 hands `card.css` the element `article` and nothing else.
+ *   2. Meaning rides `data-variant`, appearance rides `bn-` class names (spec §3 invariant 4).
+ *      `data-variant="danger"` works with no rule of its own: 01-theme.css publishes
+ *      --_variant-color and this file only spends it. The five accents (--bn-pink … --bn-lavender)
+ *      say what a card *looks like*, not what it means, so they are the five `.bn-` classes below —
+ *      declared once for the whole library, since a badge or an alert that wants one wears the same
+ *      class.
+ *   3. A card that carries a colour of its own paints its border and its shadow in that colour,
+ *      which is what spec §8 asks of the accent variant ("含强调色变体（边框与阴影同色）") and the
+ *      first real use of --bn-shadow-color being a token of its own (spec §6.1).
+ *
+ *      It cannot be done by setting --bn-shadow-color alone. A shadow token is substituted where it
+ *      is *declared*, on :root, with its colour already baked into the inherited string
+ *      (orchestrator §8, measured by ticket 05 and recorded in toast.css), so `--bn-shadow-md` on
+ *      the card is still "4px 4px 0 0 #000000" however the element is styled. A coloured card
+ *      therefore republishes its colour as --bn-shadow-color *and* re-derives the md shape: the
+ *      offsets still come from --bn-shadow-x/y, the blur and spread are invariant 2's zeros, and
+ *      the colour comes from the public channel. A card with no colour of its own keeps reading the
+ *      canonical --bn-shadow-md, so a user who redefines that token still moves every plain card.
+ *
+ *      The re-derived shape is written straight into `box-shadow`, not through the frozen
+ *      --_shadow-rest slot. A slot overridden on a container is inherited by every descendant that
+ *      reads it, and a <button> inside an accent card would take the card's colour at rest and lose
+ *      it again on hover. scripts/verify-static.mjs asserts both halves: the colour is shared, and
+ *      the leak is not.
+ *   4. A card does not move. It is a container, not a control: §4.1's shared hover geometry does not
+ *      list `article`, and this file adds no state rule, so a grid of cards cannot set itself in
+ *      motion. An interactive card would also have to re-derive the hover tier in its accent colour
+ *      — a second copy of 01-theme.css's lg derivation — and that is a worse trade than a still card.
+ *
+ * One knock-on effect worth knowing: on the cards that carry a colour, the shadow colour token is
+ * live, and custom properties inherit. A card nested inside an accent card follows the outer card's
+ * colour; reset --bn-shadow-color on the inner one if that is not what you want.
+ */
+
+/* ==============================================================================================
+ * 1. The card — one bare element, no class required.
+ * ============================================================================================ */
+article {
+  display: block;
+  padding: 1.5rem;                       /* the canonical card (recipe §16) */
+  background: var(--bn-secondary-background);
+  color: var(--bn-foreground);
+
+  /* The structural box is stated once and in no state rule: a variant changes a border *colour*,
+     never a width, so it cannot reflow a grid (spec §3 invariant 7). */
+  border-style: solid;
+  border-width: var(--bn-border-width);
+  border-radius: var(--bn-radius);       /* 0 — square corners are the point (spec §6.1) */
+  border-color: var(--_variant-color, var(--bn-border-color));
+
+  box-shadow: var(--bn-shadow-md);       /* the canonical tier; §3 re-derives it when it must */
+}
+
+/* A card owns its own spacing, so the first and last block inside it add no stray margin. */
+article > :first-child {
+  margin-block-start: 0;
+}
+
+article > :last-child {
+  margin-block-end: 0;
+}
+
+/* ==============================================================================================
+ * 2. The accent axis — appearance, therefore `bn-` class names (ADR-0005 §1).
+ *
+ *    These five classes are the library's accent vocabulary. They publish the colour on the
+ *    semantic *channel* (--_variant-color, the property 01-theme.css maps `data-variant` onto) so
+ *    every component reads a colour the same way, whichever axis asked for it.
+ *
+ *    Declaring --_variant-color here is deliberate, and it is the one place a component may do it:
+ *    these selectors match only elements that explicitly name a colour, so the theme-layer mapping
+ *    is untouched for everything else. The failure mode toast.css refuses to risk is a bare element
+ *    rule that outranks the mapping for *every* variant, and scripts/verify-static.mjs pins the
+ *    exception down to these five classes.
+ * ============================================================================================ */
+.bn-pink {
+  --_variant-color: var(--bn-pink);
+}
+
+.bn-blue {
+  --_variant-color: var(--bn-blue);
+}
+
+.bn-green {
+  --_variant-color: var(--bn-green);
+}
+
+.bn-orange {
+  --_variant-color: var(--bn-orange);
+}
+
+.bn-lavender {
+  --_variant-color: var(--bn-lavender);
+}
+
+/* ==============================================================================================
+ * 3. Border and shadow, in one colour.
+ *
+ *    The nine shapes that carry a colour of their own: the four semantic names (the theme layer has
+ *    already turned them into --_variant-color) and the five accents above. The colour is
+ *    republished as the shadow colour, and the md tier is re-derived from the tokens so that the
+ *    colour reaches it — see the header. An element with no colour of its own keeps the canonical
+ *    token and is byte-identical to every other md shadow in the library (asserted in
+ *    scripts/verify-static.mjs).
+ * ============================================================================================ */
+article:is([data-variant="success"], [data-variant="warning"], [data-variant="danger"], [data-variant="error"], .bn-pink, .bn-blue, .bn-green, .bn-orange, .bn-lavender) {
+  --bn-shadow-color: var(--_variant-color);
+  box-shadow: var(--bn-shadow-x) var(--bn-shadow-y) 0 0 var(--bn-shadow-color);
+}
 }
 /* src/css/badge.css (@layer components) */
 @layer components {
-/* badge.css — filled by ticket 10 (layer: components) */
+/* badge.css — the badge: a small label with no element of its own.
+ * (layer: components, assigned by CSS_MANIFEST in scripts/build.mjs — this file writes no @layer.)
+ *
+ * The badge is the case ADR-0001 reserves a class name for. A status chip, a count, a tag — HTML
+ * has no element for any of them, and the nearest candidates (`span`, `small`, `output`) all mean
+ * something else, so `.bn-badge` is the anchor (spec §8: "无语义元素可用，需类名").
+ *
+ * Four decisions.
+ *
+ *   1. A badge is a label, not a control. It sits in the sm shadow tier (ADR-0003: not every object
+ *      carries the same weight) and it never moves: §4.1's shared hover geometry does not list it,
+ *      and this file adds no state rule, so hovering a badge does nothing at all.
+ *   2. Meaning rides `data-variant` and reaches this file only as --_variant-color: no `--bn-success`
+ *      or `--bn-danger` appears below. A variant repaints the border *colour* and nothing else — no
+ *      padding, no width (spec §3 invariant 7), which is also why a size changes only the type.
+ *      `secondary` is the exception on purpose: it is a hierarchy, not a colour, so it gets a
+ *      quieter surface (a mix of the page's ink into its second background, so both themes work)
+ *      and keeps the page's own border and shadow.
+ *   3. Shape rides `bn-` class names: `.bn-solid` fills with the current colour, `.bn-outline`
+ *      trades the fill for coloured ink and border, `.bn-sm` / `.bn-lg` are the size axis button.css
+ *      opened (decision B says the two names are meant to be reused verbatim by later components).
+ *   4. A badge that carries a colour of its own paints its border and its shadow in that colour, by
+ *      the same mechanism as the card: the colour is republished as --bn-shadow-color and the sm
+ *      tier is re-derived from --bn-shadow-x/y, because the shadow token's own colour was baked in
+ *      on :root (orchestrator §8). The re-derivation is a copy of 01-theme.css's half-offset shape,
+ *      and scripts/verify-static.mjs keeps the two honest: a plain badge's shadow must stay
+ *      byte-identical to --bn-shadow-sm.
+ */
+
+/* ==============================================================================================
+ * 1. The shape — a small inline label.
+ * ============================================================================================ */
+.bn-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375em;
+  padding: 0.125em 0.5em;
+
+  font-family: var(--bn-font-family);
+  font-size: 0.8125rem;
+  font-weight: var(--bn-font-weight-heading);
+  line-height: 1.6;
+  white-space: nowrap;
+
+  background: var(--bn-secondary-background);
+  color: var(--bn-foreground);
+
+  /* Structural box, stated once: a variant changes the border colour and never a width. */
+  border-style: solid;
+  border-width: var(--bn-border-width);
+  border-color: var(--_variant-color, var(--bn-border-color));
+  border-radius: var(--bn-radius);
+
+  box-shadow: var(--bn-shadow-sm);       /* sm — a badge is a small object (ADR-0003) */
+}
+
+/* ==============================================================================================
+ * 2. Meaning — `data-variant`, spent only as --_variant-color.
+ * ============================================================================================ */
+
+/* secondary is a hierarchy rather than a colour (recipe §3, decision §1): one step quieter than the
+   page's own surface, mixed from the ink so it flips with the theme, and no colour channel at all
+   — its border and its shadow stay structural. */
+.bn-badge[data-variant="secondary"] {
+  background: color-mix(in srgb, var(--bn-foreground) 12%, var(--bn-secondary-background));
+}
+
+/* ==============================================================================================
+ * 3. Border and shadow, in one colour — the same mechanism as the card, one tier down.
+ * ============================================================================================ */
+.bn-badge:is([data-variant="success"], [data-variant="warning"], [data-variant="danger"], [data-variant="error"], .bn-pink, .bn-blue, .bn-green, .bn-orange, .bn-lavender) {
+  --bn-shadow-color: var(--_variant-color);
+  box-shadow: calc(var(--bn-shadow-x) / 2) calc(var(--bn-shadow-y) / 2) 0 0 var(--bn-shadow-color);
+}
+
+/* ==============================================================================================
+ * 4. Shape — `bn-` class names, orthogonal to the meaning axis.
+ * ============================================================================================ */
+
+/* Solid: the badge becomes a small filled slab in the current colour (the accent palette is bright
+   in both themes, so --bn-main-foreground stays legible on it — spec §6.2). With no variant at all
+   it falls back to --bn-main, never to the border colour, which would be a black label on a black
+   fill in the light theme. */
+.bn-badge.bn-solid {
+  background: var(--_variant-color, var(--bn-main));
+  color: var(--bn-main-foreground);
+}
+
+/* Outline: no fill, coloured ink and border. The neutral case matches `.bn-outline` on a button —
+   the page's own ink on the page's own border. */
+.bn-badge.bn-outline {
+  background: transparent;
+  color: var(--_variant-color, var(--bn-foreground));
+}
+
+/* Size axis (decision B: classes, and the middle size is the absence of one). Type and padding
+   only: a size may never touch the border box, or the grid reflows. */
+.bn-badge.bn-sm {
+  padding: 0.0625em 0.375em;
+  font-size: 0.75rem;
+}
+
+.bn-badge.bn-lg {
+  padding: 0.25em 0.625em;
+  font-size: 0.9375rem;
+}
+
+/* ==============================================================================================
+ * 5. A badge inside a link.
+ *
+ *    The one case where the badge takes the page's accent: tag lists are links, and a chip that
+ *    stayed its own colour inside a highlighted link would read as a separate object. Colour only,
+ *    and only on hover — the geometry is untouched, so nothing moves.
+ * ============================================================================================ */
+@media (hover: hover) {
+  a:hover > .bn-badge,
+  a:focus-visible > .bn-badge {
+    background: var(--bn-main);
+    color: var(--bn-main-foreground);
+  }
+}
 }
 /* src/css/alert.css (@layer components) */
 @layer components {
-/* alert.css — filled by ticket 10 (layer: components) */
+/* alert.css — the alert: a live region, dressed.
+ * (layer: components, assigned by CSS_MANIFEST in scripts/build.mjs — this file writes no @layer.)
+ *
+ * The anchor is `[role="alert"]` (spec §8). It is an ARIA role rather than an element because HTML
+ * has no element for "a message the visitor should be told about now", and because the role is what
+ * makes a screen reader announce the message when it appears. That makes the anchor global: the
+ * rule below dresses every live alert region in the document. The docs site carries none (checked by
+ * scripts/verify-static.mjs), and orchestrator §11 asks for exactly that check before a component
+ * styles a bare role.
+ *
+ * Four decisions.
+ *
+ *   1. The colour bar is the *inline-start* border, doubled, and it is set outside any state rule:
+ *      spec §3 invariant 7 forbids a state changing a border width, not a static asymmetry, and a
+ *      logical side means an RTL page needs no second rule. Everything else about the box is stated
+ *      once.
+ *   2. Meaning rides `data-variant` (spec §8), and only as --_variant-color: no `--bn-warning` or
+ *      `--bn-danger` appears below. An alert with no variant is the page's own ink on the page's own
+ *      border, indistinguishable from a mistyped variant name — the same rule the rest of the
+ *      library follows.
+ *   3. A variant colours the border *and* the shadow, by the mechanism the card documents: the
+ *      shadow tokens are substituted on :root with their colour already baked in (orchestrator §8),
+ *      so the sm tier is re-derived here from --bn-shadow-x/y with the colour taken from
+ *      --bn-shadow-color. The re-derivation is a copy of 01-theme.css's half-offset shape, and
+ *      scripts/verify-static.mjs holds the plain alert's shadow byte-identical to --bn-shadow-sm so
+ *      the copy cannot drift.
+ *   4. The entry is an animation, and it is declared inside `@media (prefers-reduced-motion:
+ *      no-preference)` — the reduced case is the absence of a rule, never a rule that switches
+ *      motion off afterwards (spec §7). The keyframes are the ones ticket 19 landed in
+ *      animations.css (`bn-fade-in-up`, marked reusable); the declaration has to live here because
+ *      animations.css belongs to ticket 14. `transform` is deliberately not what moves: the shared
+ *      geometry owns `transform`, and a `both`-filled animation pinning it would fight a hover
+ *      state. An alert by design only fades and rises, and it carries no hover state at all.
+ */
+
+/* ==============================================================================================
+ * 1. The shape — a bare role, no class required.
+ * ============================================================================================ */
+[role="alert"] {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+
+  background: var(--bn-secondary-background);
+  color: var(--bn-foreground);
+
+  /* Structural box, stated once: a variant changes the colour, never a width. */
+  border-style: solid;
+  border-width: var(--bn-border-width);
+  border-inline-start-width: calc(var(--bn-border-width) * 2);   /* the colour bar */
+  border-color: var(--_variant-color, var(--bn-border-color));
+  border-radius: var(--bn-radius);
+
+  box-shadow: var(--bn-shadow-sm);       /* sm — an alert is a notice, not an object to pick up */
+}
+
+/* The message owns its spacing, so the first and last block inside it add no stray margin. */
+[role="alert"] > :first-child {
+  margin-block-start: 0;
+}
+
+[role="alert"] > :last-child {
+  margin-block-end: 0;
+}
+
+/* ==============================================================================================
+ * 2. Meaning — `data-variant`, spent only as --_variant-color, and reaching the shadow too.
+ *
+ *    The colour bar, the border and the hard shadow are one colour, which is the property the
+ *    standalone --bn-shadow-color token exists for (spec §6.1). The semantic names already carry
+ *    --_variant-color from 01-theme.css; the five accents come from card.css's classes.
+ * ============================================================================================ */
+[role="alert"]:is([data-variant="success"], [data-variant="warning"], [data-variant="danger"], [data-variant="error"], .bn-pink, .bn-blue, .bn-green, .bn-orange, .bn-lavender) {
+  --bn-shadow-color: var(--_variant-color);
+  box-shadow: calc(var(--bn-shadow-x) / 2) calc(var(--bn-shadow-y) / 2) 0 0 var(--bn-shadow-color);
+}
+
+/* ==============================================================================================
+ * 3. Shape — `bn-` class names, orthogonal to the meaning axis.
+ *
+ *    `.bn-solid` is the loudest form: the whole notice is filled with the current colour and the ink
+ *    flips to --bn-main-foreground. With no variant it falls back to --bn-main rather than to the
+ *    border colour, which would be black ink on a black fill.
+ * ============================================================================================ */
+[role="alert"].bn-solid {
+  background: var(--_variant-color, var(--bn-main));
+  color: var(--bn-main-foreground);
+}
+
+/* ==============================================================================================
+ * 4. Arrival — declared only where the visitor has not asked for less motion (spec §7).
+ * ============================================================================================ */
+@media (prefers-reduced-motion: no-preference) {
+  [role="alert"] {
+    animation: bn-fade-in-up var(--_motion) both;
+  }
+}
 }
 /* src/css/form.css (@layer components) */
 @layer components {
@@ -716,11 +1049,168 @@ a {
 }
 /* src/css/spinner.css (@layer components) */
 @layer components {
-/* spinner.css — filled by ticket 10 (layer: components) */
+/* spinner.css — the loading indicator, and the default look of a status region.
+ * (layer: components, assigned by CSS_MANIFEST in scripts/build.mjs — this file writes no @layer.)
+ *
+ * The anchor is `[role="status"]` (spec §8). It is the same anchor the skeleton uses, so the two
+ * files have to tell each other apart, and orchestrator decision §3C settles which way round:
+ * **a bare `[role="status"]` is the spinner**, and `.bn-skeleton` overrides it. The reasoning is
+ * accessibility-first: a status region is a live region, a live region on a page is nearly always
+ * saying "working on it", and the shape it should take by default is therefore the one that says
+ * "working on it". The override is spelled out with `:not(.bn-skeleton)` rather than left to file
+ * order, so the two components cannot be swapped by an edit to scripts/build.mjs's manifest.
+ *
+ * The accessible name is the author's job and CSS cannot supply it: a 24px ring says nothing to a
+ * screen reader. Give the element `aria-label` (or, once Utilities lands, a `.bn-visually-hidden`
+ * text child) — never visible text, which would burst out of a 24px box.
+ *
+ * Three decisions.
+ *
+ *   1. The ring is drawn with a border: three sides in a translucent mix of the page's ink, one side
+ *      in the accent colour. The mix is `color-mix` of a token, never a literal, so the track flips
+ *      with the theme (a `#ccc` track would vanish on the dark background); the stroke is
+ *      two thirds of the structural border width, of the same single value, so changing
+ *      --bn-border-width rescales the ring too. `border-radius: 50%` is the library's second
+ *      deliberate circle, after `input[type="radio"]` — a ring is round by meaning, and --bn-radius
+ *      still governs every box.
+ *   2. The rotation is declared only inside `@media (prefers-reduced-motion: no-preference)`
+ *      (spec §7), so a visitor who asked for less motion gets no animation rule at all. What is
+ *      left is a still, incomplete ring: the missing arc is the loading glyph, so the reduced case
+ *      still says "loading" instead of saying nothing. A reduce block that stopped a running
+ *      animation afterwards would be the rejected form.
+ *   3. `rotate` is used as its own property, not `transform`. The shared interaction geometry owns
+ *      `transform` for hover and press; a spinner that spun `transform` would be one rule away from
+ *      fighting it, and it can sit inside a button or a card without touching their geometry.
+ *
+ * The 700ms period is the one duration in this file. There is no token for an animation period —
+ * --bn-transition (150ms) is the interaction duration, and a ring turning six times a second reads
+ * as a glitch rather than as progress — so the period is stated here, next to the animation it
+ * belongs to, and nothing else in the library depends on it.
+ */
+
+/* ==============================================================================================
+ * 1. The ring — drawn unconditionally, so reduced motion still has something to show.
+ * ============================================================================================ */
+:is([role="status"], .bn-spinner):not(.bn-skeleton) {
+  --_size: 1.5rem;
+  --_stroke: calc(var(--bn-border-width) * 2 / 3);
+
+  display: inline-block;
+  box-sizing: border-box;                /* --_size is the ring's outside, not its hole */
+  inline-size: var(--_size);
+  block-size: var(--_size);
+  vertical-align: middle;                /* sits on the text baseline beside "Loading…" */
+
+  border-style: solid;
+  border-width: var(--_stroke);
+  border-color: color-mix(in srgb, var(--bn-foreground) 20%, transparent);   /* the track */
+  border-block-start-color: var(--_variant-color, var(--bn-main));           /* the arc */
+  border-radius: 50%;
+}
+
+/* A variant needs no rule of its own: `[data-variant]` in 01-theme.css publishes --_variant-color,
+ * the arc above already reads it with --bn-main as the neutral fallback, and the five accents come
+ * from card.css. Nothing else about the ring changes, and no state rule exists: a spinner has no
+ * hover, no press and no focus of its own. */
+
+/* ==============================================================================================
+ * 2. Motion — declared where the visitor accepts it, and nowhere else.
+ * ============================================================================================ */
+@keyframes bn-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :is([role="status"], .bn-spinner):not(.bn-skeleton) {
+    animation: bn-spin 700ms linear infinite;
+  }
+}
 }
 /* src/css/skeleton.css (@layer components) */
 @layer components {
-/* skeleton.css — filled by ticket 10 (layer: components) */
+/* skeleton.css — the loading placeholder: the same anchor as the spinner, the opposite shape.
+ * (layer: components, assigned by CSS_MANIFEST in scripts/build.mjs — this file writes no @layer.)
+ *
+ * Spec §8 gives both Spinner and Skeleton the anchor `[role="status"]`, and the two files have to
+ * disagree about what that anchor looks like. Orchestrator decision §3C settles it: a bare
+ * `[role="status"]` is the spinner (spinner.css), and **`.bn-skeleton` overrides it**. The override
+ * is explicit in the other file (`:not(.bn-skeleton)`), not a consequence of this file coming later
+ * in the manifest, so the two cannot be swapped by an edit to scripts/build.mjs.
+ *
+ * The class is the anchor because there is no other way to say "this live region is a placeholder"
+ * (ADR-0001 reserves class names for exactly this case). Write both: `role="status"` is what puts
+ * the skeleton in the accessibility tree as a live region, `.bn-skeleton` is what makes it a
+ * placeholder instead of a ring.
+ *
+ * Four decisions.
+ *
+ *   1. A skeleton has no intrinsic size. It is a block with `min-block-size: 1em` and nothing else;
+ *      the author gives it a width and a height (an inline style in the docs' examples, a utility
+ *      class or a rule of their own in a real page). No `.bn-skeleton-w-*` scale is offered: spec §8
+ *      asks Utilities for a *bounded* set, and an unbounded width scale would be a second layout
+ *      system wearing the library's prefix.
+ *   2. The surface is `color-mix` of the page's ink into its second background, and the border is
+ *      the structural border. Both flip with the theme; nothing here is a literal, because `#eee`
+ *      on the dark background is an invisible placeholder.
+ *   3. The sheen is drawn unconditionally and *animated* inside `@media (prefers-reduced-motion:
+ *      no-preference)`. That is the spec §7 shape exactly: no reduce block, no rule that switches
+ *      motion off afterwards, and with motion reduced the placeholder is still a bordered block with
+ *      a frozen highlight — still recognisably a placeholder rather than an empty div.
+ *   4. The keyframes live here, not in animations.css: orchestrator §11 gives that file to the
+ *      Dialog ticket, and each component owns its own motion.
+ */
+
+/* ==============================================================================================
+ * 1. The placeholder — a block whose size is the author's to give.
+ * ============================================================================================ */
+.bn-skeleton {
+  --_shimmer: color-mix(in srgb, var(--bn-foreground) 12%, var(--bn-secondary-background));
+
+  display: block;
+  box-sizing: border-box;                /* the size an author gives is the size it occupies */
+  min-block-size: 1em;                   /* never a zero-height, invisible line */
+
+  border-style: solid;
+  border-width: var(--bn-border-width);
+  border-color: var(--bn-border-color);
+  border-radius: var(--bn-radius);
+
+  /* The frozen sheen: one soft highlight across the surface, drawn whether or not it is animated. */
+  background-color: var(--_shimmer);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--bn-foreground) 8%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+}
+
+/* Consecutive placeholders keep a rhythm, the way lines of text do. */
+.bn-skeleton + .bn-skeleton {
+  margin-block-start: 0.5rem;
+}
+
+/* ==============================================================================================
+ * 2. Motion — declared where the visitor accepts it, and nowhere else (spec §7).
+ * ============================================================================================ */
+@keyframes bn-shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .bn-skeleton {
+    animation: bn-shimmer 1.4s linear infinite;
+  }
+}
 }
 /* src/css/dropdown.css (@layer components) */
 @layer components {

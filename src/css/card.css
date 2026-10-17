@@ -1,1 +1,117 @@
-/* card.css — filled by ticket 10 (layer: components) */
+/* card.css — the card, and the library's accent axis.
+ * (layer: components, assigned by CSS_MANIFEST in scripts/build.mjs — this file writes no @layer.)
+ *
+ * Four things are settled here.
+ *
+ *   1. The element is the anchor (ADR-0001). A bare <article> is a card — the page's second surface,
+ *      the canonical 1.5rem of padding, the structural border and the md shadow tier — and no class
+ *      is invented for it, because spec §5 hands `card.css` the element `article` and nothing else.
+ *   2. Meaning rides `data-variant`, appearance rides `bn-` class names (spec §3 invariant 4).
+ *      `data-variant="danger"` works with no rule of its own: 01-theme.css publishes
+ *      --_variant-color and this file only spends it. The five accents (--bn-pink … --bn-lavender)
+ *      say what a card *looks like*, not what it means, so they are the five `.bn-` classes below —
+ *      declared once for the whole library, since a badge or an alert that wants one wears the same
+ *      class.
+ *   3. A card that carries a colour of its own paints its border and its shadow in that colour,
+ *      which is what spec §8 asks of the accent variant ("含强调色变体（边框与阴影同色）") and the
+ *      first real use of --bn-shadow-color being a token of its own (spec §6.1).
+ *
+ *      It cannot be done by setting --bn-shadow-color alone. A shadow token is substituted where it
+ *      is *declared*, on :root, with its colour already baked into the inherited string
+ *      (orchestrator §8, measured by ticket 05 and recorded in toast.css), so `--bn-shadow-md` on
+ *      the card is still "4px 4px 0 0 #000000" however the element is styled. A coloured card
+ *      therefore republishes its colour as --bn-shadow-color *and* re-derives the md shape: the
+ *      offsets still come from --bn-shadow-x/y, the blur and spread are invariant 2's zeros, and
+ *      the colour comes from the public channel. A card with no colour of its own keeps reading the
+ *      canonical --bn-shadow-md, so a user who redefines that token still moves every plain card.
+ *
+ *      The re-derived shape is written straight into `box-shadow`, not through the frozen
+ *      --_shadow-rest slot. A slot overridden on a container is inherited by every descendant that
+ *      reads it, and a <button> inside an accent card would take the card's colour at rest and lose
+ *      it again on hover. scripts/verify-static.mjs asserts both halves: the colour is shared, and
+ *      the leak is not.
+ *   4. A card does not move. It is a container, not a control: §4.1's shared hover geometry does not
+ *      list `article`, and this file adds no state rule, so a grid of cards cannot set itself in
+ *      motion. An interactive card would also have to re-derive the hover tier in its accent colour
+ *      — a second copy of 01-theme.css's lg derivation — and that is a worse trade than a still card.
+ *
+ * One knock-on effect worth knowing: on the cards that carry a colour, the shadow colour token is
+ * live, and custom properties inherit. A card nested inside an accent card follows the outer card's
+ * colour; reset --bn-shadow-color on the inner one if that is not what you want.
+ */
+
+/* ==============================================================================================
+ * 1. The card — one bare element, no class required.
+ * ============================================================================================ */
+article {
+  display: block;
+  padding: 1.5rem;                       /* the canonical card (recipe §16) */
+  background: var(--bn-secondary-background);
+  color: var(--bn-foreground);
+
+  /* The structural box is stated once and in no state rule: a variant changes a border *colour*,
+     never a width, so it cannot reflow a grid (spec §3 invariant 7). */
+  border-style: solid;
+  border-width: var(--bn-border-width);
+  border-radius: var(--bn-radius);       /* 0 — square corners are the point (spec §6.1) */
+  border-color: var(--_variant-color, var(--bn-border-color));
+
+  box-shadow: var(--bn-shadow-md);       /* the canonical tier; §3 re-derives it when it must */
+}
+
+/* A card owns its own spacing, so the first and last block inside it add no stray margin. */
+article > :first-child {
+  margin-block-start: 0;
+}
+
+article > :last-child {
+  margin-block-end: 0;
+}
+
+/* ==============================================================================================
+ * 2. The accent axis — appearance, therefore `bn-` class names (ADR-0005 §1).
+ *
+ *    These five classes are the library's accent vocabulary. They publish the colour on the
+ *    semantic *channel* (--_variant-color, the property 01-theme.css maps `data-variant` onto) so
+ *    every component reads a colour the same way, whichever axis asked for it.
+ *
+ *    Declaring --_variant-color here is deliberate, and it is the one place a component may do it:
+ *    these selectors match only elements that explicitly name a colour, so the theme-layer mapping
+ *    is untouched for everything else. The failure mode toast.css refuses to risk is a bare element
+ *    rule that outranks the mapping for *every* variant, and scripts/verify-static.mjs pins the
+ *    exception down to these five classes.
+ * ============================================================================================ */
+.bn-pink {
+  --_variant-color: var(--bn-pink);
+}
+
+.bn-blue {
+  --_variant-color: var(--bn-blue);
+}
+
+.bn-green {
+  --_variant-color: var(--bn-green);
+}
+
+.bn-orange {
+  --_variant-color: var(--bn-orange);
+}
+
+.bn-lavender {
+  --_variant-color: var(--bn-lavender);
+}
+
+/* ==============================================================================================
+ * 3. Border and shadow, in one colour.
+ *
+ *    The nine shapes that carry a colour of their own: the four semantic names (the theme layer has
+ *    already turned them into --_variant-color) and the five accents above. The colour is
+ *    republished as the shadow colour, and the md tier is re-derived from the tokens so that the
+ *    colour reaches it — see the header. An element with no colour of its own keeps the canonical
+ *    token and is byte-identical to every other md shadow in the library (asserted in
+ *    scripts/verify-static.mjs).
+ * ============================================================================================ */
+article:is([data-variant="success"], [data-variant="warning"], [data-variant="danger"], [data-variant="error"], .bn-pink, .bn-blue, .bn-green, .bn-orange, .bn-lavender) {
+  --bn-shadow-color: var(--_variant-color);
+  box-shadow: var(--bn-shadow-x) var(--bn-shadow-y) 0 0 var(--bn-shadow-color);
+}

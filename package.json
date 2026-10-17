@@ -20,7 +20,8 @@
     "verify:toast": "node scripts/verify-toast.mjs",
     "verify:tabs": "node scripts/verify-tabs.mjs",
     "verify:dropdown": "node scripts/verify-dropdown.mjs",
-    "verify:interaction": "node scripts/verify-interaction.mjs"
+    "verify:interaction": "node scripts/verify-interaction.mjs",
+    "verify:static": "node scripts/verify-static.mjs"
   },
   "dependencies": {},
   "devDependencies": {
