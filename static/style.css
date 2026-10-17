@@ -215,6 +215,45 @@ html:not([data-site-js]) [data-site-theme-toggle] {
   font-size: 0.9375rem;
 }
 
+/*
+ * THE PAGE SHELL IS NOT A CARD.
+ *
+ * `article` is the library's card (ADR-0001, spec §5: the element is the anchor, no card class),
+ * and two of this site's templates use it for something else — a *page*:
+ *
+ *     templates/component.html   <article class="site-component">
+ *     templates/page.html        <article class="site-page">
+ *
+ * seite adds a third: dist/404.html is generated with a bare `<article>` inside `.site-main`, and
+ * there is no template to put a class on it. Left alone, the card rule hands every documentation
+ * page 1.5rem of padding, a 3px border, the md hard shadow and the white second surface — a
+ * black-framed page. The five declarations below take the card's box back; the three selectors
+ * name the two template shells and the classless generated one (by position: the page shell is
+ * the one *direct* `article` child of the container, so a demo card inside a Preview panel can
+ * never match).
+ *
+ * These declarations are deliberately **unlayered**, and that is the whole mechanism: ADR-0006
+ * makes every unlayered author declaration outrank every `@layer` the library ships, so this wins
+ * over `@layer components { article { … } }` without an `!important` and without a selector-weight
+ * race. The alternative — a `:not(.site-*)` guard inside card.css — is forbidden: it would write
+ * this one site's class names into the library. The same contract is already how ticket 17 hands
+ * the container its `--_container-max` / `--_container-pad`.
+ *
+ * Nothing here touches the site's spacing: the gutter is `.site-main`'s padding-inline plus the
+ * container's `--site-pad`, and `--site-pad` is `clamp(1rem, 4vw, 2rem)` (ticket 17). Zeroing the
+ * shell's own padding is what makes the shell and `.site-main`'s content edge coincide; the
+ * measure the prose keeps is `.site-prose`'s, not the shell's.
+ */
+.site-component,
+.site-page,
+.site-main > article {
+  border-width: 0;
+  box-shadow: none;
+  padding: 0;
+  background: none;
+  border-radius: 0;
+}
+
 /* ----------------------------------------------------------------- prose ------------ */
 
 /*
