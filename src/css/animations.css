@@ -1,5 +1,6 @@
-/* animations.css — the library's entry animations, and nothing that is on by default.
- * (layer: animations, assigned by CSS_MANIFEST in scripts/build.mjs — this file writes no @layer.)
+/* animations.css — the library's entry animations and its one overlay, and nothing that is on by
+ * default. (layer: animations, assigned by CSS_MANIFEST in scripts/build.mjs — this file writes no
+ * @layer.)
  *
  * The rule of this file (spec §7): motion is *declared* inside
  * `@media (prefers-reduced-motion: no-preference)` and never switched off afterwards. A visitor who
@@ -10,8 +11,23 @@
  * rise with a fade, used by the components that appear rather than by the ones that move on hover
  * (a hover displacement and an `animation ... both` would fight over `transform`).
  *
- * Ticket 19 fills it in for `<bn-dropdown>`; later components (alert, toast, tabs, details) reuse
- * the same keyframes by adding a selector to the block below.
+ * Ticket 19 filled it in for `<bn-dropdown>`; ticket 14 owns the file and adds the modal: the
+ * dialog rises with the same `bn-fade-in-up`, and its `::backdrop` fades in underneath it with
+ * `bn-fade-in`. Reusing the keyframes is deliberate — a second block written out by hand would be
+ * a copy that could drift, and the one-line selector is the whole cost of sharing.
+ *
+ * `::backdrop` also lives here (spec §5 names it in this file's job) and it is the one thing in
+ * this file that is *not* motion: the overlay is painted whether or not the visitor accepts
+ * animation, so its rule sits outside the guard. Only the fade is guarded.
+ *
+ * A note on the shorthand below, because it is the opposite of what a careful reader would expect
+ * from orchestrator-decisions §13: the token cannot be spent in a longhand here. `--_motion`
+ * resolves to `150ms ease` — two components — so `animation-duration: var(--_motion)` is invalid at
+ * computed-value time and computes to `0s` (measured in Chrome 155), while the shorthand
+ * `animation: <name> var(--_motion) both` parses the substituted string as duration + easing and
+ * works (also measured: name `bn-fade-in-up`, duration `0.15s`, fill `both`). The frozen duration
+ * may only be spent where both halves fit, which is why the entry rules use the shorthand and
+ * scripts/verify-dialog.mjs fails the build if a `var()` ever reappears in an `animation-duration`.
  */
 
 @keyframes bn-fade-in-up {
@@ -25,10 +41,38 @@
   }
 }
 
+/* The overlay's fade starts from transparent and ends at whatever `::backdrop` already paints, so
+   the two rules cannot disagree about the colour. */
+@keyframes bn-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   /* The panel arrives; it never leaves with an animation, because the popover hides synchronously
      and an exit animation would need a delay the component cannot justify. */
   bn-dropdown [popover]:popover-open {
     animation: bn-fade-in-up var(--_motion) both;
   }
+
+  /* The modal rises exactly as the panel does. Re-opening replays it: closing removes the rule, so
+     the next `show-modal` starts a fresh animation instead of leaving a finished one pinned. */
+  dialog[open] {
+    animation: bn-fade-in-up var(--_motion) both;
+  }
+
+  /* The overlay fades in beneath the dialog. It is the backdrop of the same element, so it is
+     animated on the dialog's own selector — `::backdrop` is not an element of its own. */
+  dialog[open]::backdrop {
+    animation: bn-fade-in var(--_motion) both;
+  }
+}
+
+/* The overlay itself: one token, in both themes (spec §6.2 does not retune `--bn-overlay`; a dark
+   page behind a black veil still needs the dialog's white border and white hard shadow to separate
+   it, and that is exactly what the component paints). Not inside the guard: this is the dimming,
+   not the animation. */
+dialog::backdrop {
+  background-color: var(--bn-overlay);
 }
