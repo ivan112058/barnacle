@@ -1,1 +1,177 @@
-/* tabs.css — filled by ticket 20 (layer: components) */
+/* tabs.css — the tab strip and its panels (layer: components, assigned by CSS_MANIFEST in
+ * scripts/build.mjs — this file writes no @layer).
+ *
+ * The ARIA roles carry the meaning (spec §8: the element is "给正确 ARIA 结构加行为"), so the
+ * shape is driven by `role="tablist"` / `role="tab"` / `role="tabpanel"` rather than by
+ * `<bn-tabs>` having been upgraded: a page whose script never runs still renders a correctly
+ * shaped strip with readable panels.
+ *
+ * Three contracts govern everything below.
+ *
+ *   1. The geometry has one source and it is not this file (orchestrator-decisions §4). Every
+ *      displacement, shadow tier, focus ring and motion duration is a --_ slot declared once on
+ *      :root in 00-base.css; this file chooses which slot applies in which state and never states
+ *      a number. The tab is dressed exactly like a button, from the same slots, so the strip and
+ *      the buttons around it lift by the same amount.
+ *   2. Nothing hides a panel except `[hidden]`, and the markup never carries it: the script adds
+ *      it to the panels that are not selected. With no script the attribute is absent and every
+ *      panel is visible, which is spec §3 invariant 6 ("样式不得依赖 JS") in its tab form — the
+ *      tab set loses its interaction and keeps all of its content.
+ *   3. Every selector is scoped to `bn-tabs`, which is narrower than the roles it dresses, and
+ *      that is deliberate. `role="tab"` is not a rarity: a page that documents this library may
+ *      build its own Preview / Code pairs out of the very same roles, and a rule written on the
+ *      bare role would reach across and restyle a foreign strip — moving its panel, painting a
+ *      second shadow on its buttons. Styling one's own element is the same rule that keeps a
+ *      component from writing a bare `.button`. The element is in the author's markup whether or
+ *      not the script runs, so the no-script promise above is unaffected.
+ */
+
+/* ==============================================================================================
+ * 1. The strip.
+ * ============================================================================================ */
+bn-tabs {
+  display: block;
+}
+
+bn-tabs [role="tablist"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  /* No underline-style tablist: a Neubrutalist tab strip is a row of buttons. The list carries no
+     tabindex of its own — the roving tabindex lives on the tabs, where the focus ring belongs. */
+}
+
+/* ==============================================================================================
+ * 2. The tab — the button shape, from the button's own slots.
+ * ============================================================================================ */
+bn-tabs [role="tab"] {
+  /* The surface slots are the only thing the selected state changes about colour. */
+  --_surface: var(--bn-secondary-background);
+  --_surface-hover: var(--bn-secondary-background);
+  --_surface-press: var(--bn-secondary-background);
+
+  /* A tab sits above a panel, so it rests one shadow tier below a button — and rises exactly one
+     tier on hover, which is precisely --bn-shadow-lift. Lowering the rest tier without moving the
+     hover tier would break "the object rises by what its shadow grows by" (spec §7); the pair is
+     what keeps the shadow planted. .bn-outline does the same thing for a button. */
+  --_shadow-rest: var(--bn-shadow-sm);
+  --_shadow-hover: var(--bn-shadow-md);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  box-sizing: border-box;
+  min-block-size: 2.5rem;
+  padding: 0.5rem 1rem;
+
+  /* The structural box is declared here and in no state rule: a state may change a border
+     *colour*, never a border *width* (spec §3 invariant 7 — a width change reflows the strip). */
+  border-style: solid;
+  border-width: var(--bn-border-width);
+  border-color: var(--_border-rest);
+  border-radius: var(--bn-radius);       /* 0 — square corners are the point (spec §6.1) */
+
+  background: var(--_surface);
+  color: var(--bn-foreground);
+  box-shadow: var(--_shadow-rest);
+
+  font-family: var(--bn-font-display);
+  font-size: 1rem;
+  font-weight: var(--bn-font-weight-heading);
+  line-height: 1.4;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* ==============================================================================================
+ * 3. The selected tab — the resting form of a pressed button.
+ *
+ *    Its shadow is collapsed and its displacement slots are zeroed rather than cancelled with a
+ *    `transform: none` rule, the same move `.bn-ghost` makes: nothing in the library ever *cancels*
+ *    a transform, so "the displacement has exactly one source" stays true by construction. The
+ *    fill and the missing shadow are what make the selected tab readable — a colour change alone
+ *    would leave the focus ring and the selection indistinguishable on a dark page.
+ * ============================================================================================ */
+bn-tabs [role="tab"][aria-selected="true"] {
+  --_lift-x: 0;
+  --_lift-y: 0;
+  --_press-x: 0;
+  --_press-y: 0;
+  --_shadow-rest: none;
+  --_shadow-hover: none;
+  --_shadow-press: none;
+  --_surface: var(--bn-main);
+  --_surface-hover: var(--bn-main);
+  --_surface-press: var(--bn-main);
+  color: var(--bn-main-foreground);
+}
+
+/* ==============================================================================================
+ * 4. The three states that move — hover, press, focus. Same slots, same equation as button.css:
+ *    the object rises by exactly what its shadow grows by, so the shadow stays planted.
+ * ============================================================================================ */
+@media (hover: hover) {
+  bn-tabs [role="tab"]:not(:disabled):not([aria-disabled="true"]):hover {
+    transform: translate(var(--_lift-x), var(--_lift-y));
+    box-shadow: var(--_shadow-hover);
+    border-color: var(--_border-hover);
+    background-color: var(--_surface-hover);
+  }
+}
+
+bn-tabs [role="tab"]:not(:disabled):not([aria-disabled="true"]):active {
+  transform: translate(var(--_press-x), var(--_press-y));
+  box-shadow: var(--_shadow-press);
+  border-color: var(--_border-press);
+  background-color: var(--_surface-press);
+}
+
+/* Focus: an outline painted outside the hard shadow, so neither swallows the other (spec §7).
+   00-base.css already carries this for every element; it is restated here so the tab's whole
+   contract reads in one file, with the same slots. */
+bn-tabs [role="tab"]:focus-visible {
+  outline: var(--_focus-ring);
+  outline-offset: var(--_focus-ring-offset);
+}
+
+/* Motion is only *declared* where the visitor accepts it, so the reduced case is the absence of a
+   rule rather than a rule that switches motion off afterwards (spec §7). */
+@media (prefers-reduced-motion: no-preference) {
+  bn-tabs [role="tab"] {
+    transition:
+      transform var(--_motion),
+      box-shadow var(--_motion),
+      background-color var(--_motion),
+      border-color var(--_motion);
+  }
+}
+
+/* ==============================================================================================
+ * 5. The panel.
+ * ============================================================================================ */
+bn-tabs [role="tabpanel"] {
+  margin-block-start: 0.75rem;
+  padding: 1rem;
+  background: var(--bn-secondary-background);
+  border: var(--bn-border-width) solid var(--bn-border-color);
+  border-radius: var(--bn-radius);
+  box-shadow: var(--_shadow-rest);
+}
+
+/* The one and only way a panel is hidden, and it is the script that sets it. No script means no
+   attribute means every panel is visible and readable (spec §3 invariant 6). */
+bn-tabs [role="tabpanel"][hidden] {
+  display: none;
+}
+
+/* A panel is a container, not a text block: the gap above it is the container's, so the first and
+   last child drop their own margins instead of doubling it. */
+bn-tabs [role="tabpanel"] > :first-child {
+  margin-block-start: 0;
+}
+
+bn-tabs [role="tabpanel"] > :last-child {
+  margin-block-end: 0;
+}
