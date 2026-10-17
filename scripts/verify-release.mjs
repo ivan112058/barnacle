@@ -39,6 +39,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { ARTIFACTS, CSS_MANIFEST, LAYER_DECLARATION } from './build.mjs';
+import { listenOnFreePort } from './lib/server.mjs';
 
 /* ======================================= expectations ====================================== */
 
@@ -291,7 +292,7 @@ function doubledSegments(publishedPath) {
  * origin and directory-index semantics are different from a web server's, and the whole point of
  * this file is the sub-path.
  */
-function startSiteServer(mounts) {
+async function startSiteServer(mounts) {
   const resolved = mounts
     .map(({ prefix, root }) => ({
       prefix: prefix.length > 1 && prefix.endsWith('/') ? prefix.slice(0, -1) : prefix,
@@ -340,16 +341,11 @@ function startSiteServer(mounts) {
     response.end(fs.readFileSync(file));
   });
 
-  return new Promise((resolve, reject) => {
-    server.once('error', reject);
-    server.listen(0, '127.0.0.1', () => {
-      const { port } = server.address();
-      resolve({
-        origin: `http://127.0.0.1:${port}`,
-        close: () => new Promise((done) => server.close(done)),
-      });
-    });
-  });
+  const { port } = await listenOnFreePort(server);
+  return {
+    origin: `http://127.0.0.1:${port}`,
+    close: () => new Promise((done) => server.close(done)),
+  };
 }
 
 /* ------------------------------------ the HTTP request ------------------------------------- */

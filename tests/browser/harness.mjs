@@ -51,6 +51,8 @@ import { fileURLToPath } from 'node:url';
 
 import { chromium } from 'playwright-core';
 
+import { listenOnFreePort } from '../../scripts/lib/server.mjs';
+
 /* ==============================================================================================
  * 0. Where things are
  * ============================================================================================ */
@@ -176,32 +178,11 @@ export async function startStaticServer({ mounts, basePath = BASE_PATH } = {}) {
     });
   });
 
-  // An ephemeral port can still be taken by another process between the request and the bind.
-  let lastError;
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    try {
-      await new Promise((resolve, reject) => {
-        const onError = (error) => {
-          server.off('listening', onListening);
-          reject(error);
-        };
-        const onListening = () => {
-          server.off('error', onError);
-          resolve();
-        };
-        server.once('error', onError);
-        server.once('listening', onListening);
-        server.listen(0, '127.0.0.1');
-      });
-      lastError = undefined;
-      break;
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  if (lastError) throw lastError;
-
-  const port = server.address().port;
+  // The port has to be one Chrome will actually connect to: `listen(0)` can hand out one of its
+  // restricted ports (ERR_UNSAFE_PORT), and another process can take the number between the request
+  // and the bind. scripts/lib/server.mjs owns both retries, so the scripts and this harness cannot
+  // disagree about which ports are usable.
+  const { port } = await listenOnFreePort(server);
   const origin = `http://127.0.0.1:${port}`;
   const baseUrl = `${origin}${base === '/' ? '/' : base + '/'}`;
 

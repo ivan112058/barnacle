@@ -41,6 +41,7 @@ import { fileURLToPath } from 'node:url';
 
 import { blankComments, declarations, matchBrace, parseRules } from './lib/css.mjs';
 import { FROZEN_SLOTS, HYGIENE, PUBLIC_TOKENS } from './lib/tokens.mjs';
+import { listenOnFreePort } from './lib/server.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const abs = (...parts) => path.join(ROOT, ...parts);
@@ -320,7 +321,7 @@ async function startServer() {
     res.writeHead(200, { 'content-type': type, 'cache-control': 'no-store' });
     res.end(fs.readFileSync(target));
   });
-  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  await listenOnFreePort(server);
   const origin = `http://127.0.0.1:${server.address().port}`;
   return { origin, close: () => new Promise((resolve) => server.close(resolve)) };
 }

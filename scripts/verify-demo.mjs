@@ -34,6 +34,7 @@ import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { listenOnFreePort } from './lib/server.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const abs = (...parts) => path.join(ROOT, ...parts);
@@ -455,7 +456,7 @@ async function startServer() {
       res.end(buffer);
     });
   });
-  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  await listenOnFreePort(server);
   const origin = `http://127.0.0.1:${server.address().port}`;
   return {
     origin,

@@ -34,6 +34,7 @@ import { fileURLToPath } from 'node:url';
 import { CSS_MANIFEST, LAYER_DECLARATION, layerBlock } from './build.mjs';
 
 import { blankComments, declarationsOf, matchBrace } from './lib/css.mjs';
+import { listenOnFreePort } from './lib/server.mjs';
 import {
   DEFAULT_SLOT_VALUES as DEFAULT_SLOTS,
   FROZEN_SLOT_VALUES as FROZEN_SLOTS,
@@ -734,10 +735,7 @@ async function startServer() {
     }
     res.writeHead(404, { 'content-type': 'text/plain' }).end(`not found: ${urlPath}`);
   });
-  await new Promise((resolve, reject) => {
-    server.once('error', reject);
-    server.listen(0, '127.0.0.1', resolve);
-  });
+  await listenOnFreePort(server);
   const origin = `http://127.0.0.1:${server.address().port}`;
   return { origin, url: `${origin}/harness.html`, close: () => new Promise((r) => server.close(r)) };
 }

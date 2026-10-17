@@ -21,6 +21,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { CONTENT_DIR, SIDECAR_DIR, listMasters, renderPage, splitBody, splitFrontmatter, targetOf } from './i18n-zh.mjs';
+import { listenOnFreePort } from './lib/server.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = path.join(ROOT, 'dist');
@@ -536,7 +537,7 @@ BROWSER_CHECKS.push(
 
 /* ------------------------------------------------------------------------------ runner --- */
 
-function startServer() {
+async function startServer() {
   const MIME = {
     '.html': 'text/html; charset=utf-8',
     '.css': 'text/css; charset=utf-8',
@@ -564,14 +565,11 @@ function startServer() {
     response.writeHead(200, { 'content-type': MIME[path.extname(file).toLowerCase()] ?? 'application/octet-stream' });
     response.end(fs.readFileSync(file));
   });
-  return new Promise((resolve) => {
-    server.listen(0, '127.0.0.1', () => {
-      resolve({
-        base: `http://127.0.0.1:${server.address().port}/barnacle`,
-        close: () => new Promise((done) => server.close(done)),
-      });
-    });
-  });
+  const { port } = await listenOnFreePort(server);
+  return {
+    base: `http://127.0.0.1:${port}/barnacle`,
+    close: () => new Promise((done) => server.close(done)),
+  };
 }
 
 async function main() {

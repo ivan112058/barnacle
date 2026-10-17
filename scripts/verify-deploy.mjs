@@ -25,6 +25,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { listenOnFreePort } from './lib/server.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = path.join(ROOT, 'dist');
@@ -372,7 +373,7 @@ function resolveInDist(urlPath) {
 }
 
 /** Serve dist/ under /barnacle/ — the project-site mount the dev server never reproduces. */
-function startProjectSiteServer() {
+async function startProjectSiteServer() {
   const server = http.createServer((req, res) => {
     const urlPath = decodeURIComponent(new URL(req.url, 'http://127.0.0.1').pathname);
     if (urlPath !== EXPECTED_BASE_PATH && !urlPath.startsWith(`${EXPECTED_BASE_PATH}/`)) {
@@ -389,9 +390,8 @@ function startProjectSiteServer() {
     res.writeHead(200, { 'content-type': MIME[path.extname(file).toLowerCase()] ?? 'application/octet-stream' });
     res.end(fs.readFileSync(file));
   });
-  return new Promise((resolve) => {
-    server.listen(0, '127.0.0.1', () => resolve({ server, port: server.address().port }));
-  });
+  const { port } = await listenOnFreePort(server);
+  return { server, port };
 }
 
 if (!SKIP_SERVE) {

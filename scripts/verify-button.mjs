@@ -37,6 +37,7 @@ import { fileURLToPath } from 'node:url';
 
 import { blankComments, declarations, matchBrace, parseRules } from './lib/css.mjs';
 import { FROZEN_SLOTS, HYGIENE, PUBLIC_TOKENS } from './lib/tokens.mjs';
+import { listenOnFreePort } from './lib/server.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const abs = (...parts) => path.join(ROOT, ...parts);
@@ -252,10 +253,7 @@ async function startServer() {
     }
     res.writeHead(404, { 'content-type': 'text/plain' }).end(`not found: ${urlPath}`);
   });
-  await new Promise((resolve, reject) => {
-    server.once('error', reject);
-    server.listen(0, '127.0.0.1', resolve);
-  });
+  await listenOnFreePort(server);
   const origin = `http://127.0.0.1:${server.address().port}`;
   return { origin, url: `${origin}/harness.html`, close: () => new Promise((r) => server.close(r)) };
 }
